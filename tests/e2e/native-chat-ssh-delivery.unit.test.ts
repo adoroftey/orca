@@ -13,6 +13,7 @@ import {
   resetNativeChatPtySendQueuesForTests
 } from '../../src/renderer/src/components/native-chat/native-chat-runtime-send'
 import { buildAskAnswerKeys } from '../../src/shared/native-chat/input/native-chat-ask-answer'
+import { AGENT_TUI_CLEAR_INPUT_MAX } from '../../src/shared/agent-tui-input-clear'
 import { sendRuntimePtyInputVerified } from '@/runtime/runtime-terminal-verified-input'
 import { RpcDispatcher } from '../../src/main/runtime/rpc/dispatcher'
 import { TERMINAL_METHODS } from '../../src/main/runtime/rpc/methods/terminal'
@@ -81,7 +82,7 @@ describe('prompt delivery through production IPC, provider and paired host', () 
     const onDeliverySettled = vi.fn()
     sendNativeChatMessage(ssh.id, 'body', { onDeliverySettled })
     await vi.advanceTimersByTimeAsync(600)
-    expect(ssh.bytes.join('')).toBe('\x15body\r')
+    expect(ssh.bytes.join('')).toBe(`${AGENT_TUI_CLEAR_INPUT_MAX}body\r`)
     expect(onDeliverySettled).toHaveBeenCalledExactlyOnceWith(true)
   })
 

@@ -151,7 +151,13 @@ export function ItsaplanDashboardWidget({
       .sort((a, b) => b[field].localeCompare(a[field]))
       .slice(0, widgetLimit(widget.config, 10))
     return sorted.length ? (
-      <DashboardIssueList issues={sorted} metadata={metadata} onOpenIssue={onOpenIssue} />
+      <DashboardIssueList
+        issues={sorted}
+        allIssues={issues}
+        totalCount={filtered.issues.length}
+        metadata={metadata}
+        onOpenIssue={onOpenIssue}
+      />
     ) : (
       <p>{translate('itsaplan.planning.dashboards.empty', 'No data available.')}</p>
     )

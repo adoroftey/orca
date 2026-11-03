@@ -34,6 +34,25 @@ at most 500 matches; narrow a search that reaches the cap. This endpoint has no 
 pagination. The board endpoint supplies the complete active list, while full descriptions
 are loaded separately for an issue.
 
+The Issues board and initiative linked issues offer **Auto**, **Stages**, **Matrix**,
+and **List** layouts. Auto uses Matrix when its container is at least 1180 pixels wide
+and all visible stage columns fit; otherwise it uses Stages. Stages places each issue in
+its own status stage and shows its parent as context. Matrix groups issues by parent and
+stage. A parent shown only as context is not an additional selected issue. The parent
+child progress describes the provided loaded context, including a separate canceled count.
+Search context can contain only a subset of children, so these summaries are not full
+server aggregates. Initiative progress is a separate server-provided aggregate. Hierarchy
+describes parent-child relationships; a blocker is a separate relationship. Status and
+assignment do not establish whether an agent is running.
+
+The board's **Selected** count reflects the current board filter, **Loaded** is the
+supplied page or widget subset, and **Total matching**, where shown, is the filtered
+loaded set before pagination or a widget limit. These are not necessarily project-wide
+counts: search is capped at 500 and widgets can limit displayed issues. Select **Refresh**
+on Issues to request project metadata and the current board or search results again;
+stage changes appear after the refreshed results load. Multi-system overviews and run
+heartbeats remain future design proposals.
+
 Use the issue workspace action to open a linked workspace, create a new one through the
 standard composer, or attach the issue to an existing workspace on the same host. Links
 include server and project identity and support Git worktrees and folder workspaces.
@@ -54,7 +73,8 @@ issues. Where permitted, create, edit or delete initiatives and link or unlink
 issues. Deletion requires confirmation.
 
 **Views** opens saved project and personal views available to the API identity.
-The supported layouts are Kanban, table, timeline and calendar. Where permitted,
+Saved Views keep their own layouts and settings; the execution layouts above do not
+replace them. The supported layouts are Kanban, table, timeline and calendar. Where permitted,
 create, rename, duplicate, delete and edit filters and display settings. Changes
 remain a draft until **Save**; **Discard** abandons them. Unsupported filters
 or settings are identified instead of silently showing an unfiltered result;

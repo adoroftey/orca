@@ -6,10 +6,14 @@ import { date, obj, rows, str } from './SeriesChart'
 
 export function DashboardIssueList({
   issues,
+  allIssues,
+  totalCount,
   metadata,
   onOpenIssue
 }: {
   issues: ItsaplanIssue[]
+  allIssues?: ItsaplanIssue[]
+  totalCount?: number
   metadata: ItsaplanProjectDetails
   onOpenIssue: (id: number) => void
 }) {
@@ -17,7 +21,8 @@ export function DashboardIssueList({
     <IssueStatusBoard
       issues={issues}
       metadata={metadata}
-      allIssues={issues}
+      allIssues={allIssues ?? issues}
+      totalCount={totalCount}
       onOpenIssue={onOpenIssue}
       compact
     />

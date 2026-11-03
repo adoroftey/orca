@@ -6,6 +6,15 @@ import type {
   ItsaplanProjectDetails
 } from '../../../../../../shared/itsaplan/types'
 import { IssueSummaryCard } from './IssueSummaryCard'
+import { IssueExecutionStages } from './IssueExecutionStages'
+import { IssueExecutionMatrix } from './IssueExecutionMatrix'
+import {
+  buildExecutionRows,
+  executionStages,
+  executionMatrixMinWidth,
+  issueExecutionStageKey
+} from './execution-board-model'
+import { useExecutionBoardWidth } from './use-execution-board-width'
 import { isIssueBlocked } from './issue-progress'
 
 export function IssueStatusBoard({
@@ -15,7 +24,9 @@ export function IssueStatusBoard({
   onOpenIssue,
   compact = false,
   filterable = true,
-  renderActions
+  renderActions,
+  totalCount,
+  expandMatches = false
 }: {
   issues: ItsaplanIssueSummary[]
   metadata: ItsaplanProjectDetails | null
@@ -24,9 +35,12 @@ export function IssueStatusBoard({
   compact?: boolean
   filterable?: boolean
   renderActions?: (issue: ItsaplanIssueSummary) => React.ReactNode
+  totalCount?: number
+  expandMatches?: boolean
 }) {
   const [filterState, setFilterState] = useState({ scope: '', filter: 'all' })
-  const [layout, setLayout] = useState<'board' | 'list'>('board')
+  const [layout, setLayout] = useState<'auto' | 'stages' | 'matrix' | 'list'>('auto')
+  const { ref, width } = useExecutionBoardWidth()
   const dataset = issues
     .map((issue) => issue.id)
     .sort((a, b) => a - b)
@@ -34,20 +48,27 @@ export function IssueStatusBoard({
   const scope = JSON.stringify([metadata?.project.id, metadata?.project.ref, dataset])
   const filter = filterState.scope === scope ? filterState.filter : 'all'
   const setFilter = (nextFilter: string) => setFilterState({ scope, filter: nextFilter })
-  const columns = metadata?.columns ?? []
   const blocked = issues.filter((issue) => isIssueBlocked(issue, allIssues, metadata))
   const selected =
     filter === 'all'
       ? issues
       : filter === 'blocked'
         ? blocked
-        : issues.filter((issue) => String(issue.columnId) === filter)
-  const unknown = selected.filter(
-    (issue) => !columns.some((column) => column.id === issue.columnId)
-  )
-  const unknownCount = issues.filter(
-    (issue) => !columns.some((column) => column.id === issue.columnId)
-  ).length
+        : issues.filter((issue) => issueExecutionStageKey(issue, metadata) === filter)
+  const stages = executionStages(issues, metadata)
+  const visibleStages = stages.filter((stage) => stage.count > 0 || stage.key === filter)
+  const fits = width >= 1180 && width >= executionMatrixMinWidth(visibleStages)
+  const actualLayout = compact
+    ? layout === 'list'
+      ? 'list'
+      : 'stages'
+    : layout === 'auto'
+      ? fits
+        ? 'matrix'
+        : 'stages'
+      : layout === 'matrix' && !fits
+        ? 'stages'
+        : layout
   const card = (issue: ItsaplanIssueSummary) => (
     <IssueSummaryCard
       key={issue.id}
@@ -56,11 +77,17 @@ export function IssueStatusBoard({
       allIssues={allIssues}
       onOpenIssue={onOpenIssue}
       compact={compact}
+      display={{ showSubtasks: false }}
       actions={renderActions?.(issue)}
     />
   )
   return (
-    <div className="space-y-3">
+    <div
+      ref={ref}
+      className="@container min-w-0 space-y-3"
+      role={compact ? 'group' : 'region'}
+      aria-label={translate('itsaplan.presentation.board', 'Board')}
+    >
       {filterable && (
         <div
           className="flex flex-wrap items-center gap-1"
@@ -74,15 +101,15 @@ export function IssueStatusBoard({
           >
             {translate('itsaplan.presentation.all', 'All')} ({issues.length})
           </Button>
-          {columns.map((column) => (
+          {stages.map((stage) => (
             <Button
-              key={column.id}
+              key={stage.key}
               size="sm"
-              variant={filter === String(column.id) ? 'secondary' : 'ghost'}
-              aria-pressed={filter === String(column.id)}
-              onClick={() => setFilter(String(column.id))}
+              variant={filter === stage.key ? 'secondary' : 'ghost'}
+              aria-pressed={filter === stage.key}
+              onClick={() => setFilter(stage.key)}
             >
-              {column.name} ({issues.filter((issue) => issue.columnId === column.id).length})
+              {stage.name} ({stage.count})
             </Button>
           ))}
           <Button
@@ -95,64 +122,68 @@ export function IssueStatusBoard({
           </Button>
         </div>
       )}
-      <div className="flex gap-1">
-        <Button
-          size="sm"
-          variant={layout === 'board' ? 'secondary' : 'ghost'}
-          aria-pressed={layout === 'board'}
-          onClick={() => setLayout('board')}
-        >
-          {translate('itsaplan.presentation.board', 'Board')}
-        </Button>
-        <Button
-          size="sm"
-          variant={layout === 'list' ? 'secondary' : 'ghost'}
-          aria-pressed={layout === 'list'}
-          onClick={() => setLayout('list')}
-        >
-          {translate('itsaplan.presentation.list', 'List')}
-        </Button>
+      <p className="text-xs text-muted-foreground">
+        {translate('itsaplan.execution.selection', 'Selected')}: {selected.length} ·{' '}
+        {translate('itsaplan.execution.loaded', 'Loaded')}: {issues.length}
+        {totalCount !== undefined && (
+          <>
+            {' '}
+            · {translate('itsaplan.execution.total', 'Total matching')}: {totalCount}
+          </>
+        )}
+      </p>
+      <div className="flex flex-wrap gap-1">
+        {(!compact
+          ? (['auto', 'stages', 'matrix', 'list'] as const)
+          : (['stages', 'list'] as const)
+        ).map((mode) => (
+          <Button
+            key={mode}
+            size="sm"
+            variant={(compact ? actualLayout : layout) === mode ? 'secondary' : 'ghost'}
+            aria-pressed={(compact ? actualLayout : layout) === mode}
+            disabled={mode === 'matrix' && !fits}
+            onClick={() => setLayout(mode)}
+          >
+            {mode === 'auto'
+              ? translate('itsaplan.execution.auto', 'Auto')
+              : mode === 'stages'
+                ? translate('itsaplan.execution.stages', 'Stages')
+                : mode === 'matrix'
+                  ? translate('itsaplan.execution.matrix', 'Matrix')
+                  : translate('itsaplan.presentation.list', 'List')}
+          </Button>
+        ))}
       </div>
-      {layout === 'list' && selected.length === 0 ? (
+      {selected.length === 0 && (
         <p className="text-sm text-muted-foreground">
           {translate('itsaplan.presentation.noIssues', 'No issues in this selection.')}
         </p>
-      ) : layout === 'list' ? (
+      )}
+      {actualLayout === 'list' ? (
         <div className="space-y-2">{selected.map(card)}</div>
+      ) : actualLayout === 'matrix' ? (
+        <IssueExecutionMatrix
+          rows={buildExecutionRows(selected, allIssues, metadata)}
+          stages={visibleStages}
+          metadata={metadata}
+          allIssues={allIssues}
+          onOpenIssue={onOpenIssue}
+          renderActions={renderActions}
+        />
       ) : (
-        <div className="flex flex-wrap items-start gap-3">
-          {selected.length === 0 && (
-            <p className="w-full text-sm text-muted-foreground">
-              {translate('itsaplan.presentation.noIssues', 'No issues in this selection.')}
-            </p>
-          )}
-          {columns.map((column) => {
-            const stageIssues = selected.filter((issue) => issue.columnId === column.id)
-            const stageCount = issues.filter((issue) => issue.columnId === column.id).length
-            if (stageCount === 0 && filter !== String(column.id)) {
-              return null
-            }
-            return (
-              <section
-                key={column.id}
-                className="min-w-48 flex-1 rounded-md border bg-muted/30 p-2"
-              >
-                <h3 className="mb-2 text-sm font-medium">
-                  {column.name} <span className="text-muted-foreground">{stageCount}</span>
-                </h3>
-                {stageIssues.length > 0 && <div className="space-y-2">{stageIssues.map(card)}</div>}
-              </section>
-            )
-          })}
-          {unknownCount > 0 && (
-            <section className="min-w-48 flex-1 rounded-md border bg-muted/30 p-2">
-              <h3 className="mb-2 text-sm font-medium">
-                {translate('itsaplan.presentation.unknownStage', 'Unknown stage')} {unknownCount}
-              </h3>
-              <div className="space-y-2">{unknown.map(card)}</div>
-            </section>
-          )}
-        </div>
+        <IssueExecutionStages
+          key={JSON.stringify([scope, filter, expandMatches])}
+          issues={selected}
+          stages={stages}
+          metadata={metadata}
+          allIssues={allIssues}
+          onOpenIssue={onOpenIssue}
+          renderActions={renderActions}
+          compact={compact}
+          selectedStage={filter !== 'all' && filter !== 'blocked' ? filter : undefined}
+          expandMatches={expandMatches || filter === 'blocked'}
+        />
       )}
     </div>
   )

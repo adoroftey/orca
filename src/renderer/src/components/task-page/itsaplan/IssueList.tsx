@@ -9,12 +9,16 @@ export function ItsaplanIssueList({
   issues,
   metadata,
   allIssues,
+  totalCount,
+  expandMatches,
   searchCapped,
   onSelect
 }: {
   issues: ItsaplanIssueSummary[]
   metadata: ItsaplanProjectDetails | null
   allIssues?: ItsaplanIssueSummary[]
+  totalCount?: number
+  expandMatches?: boolean
   searchCapped: boolean
   onSelect: (id: number) => void
 }) {
@@ -33,6 +37,8 @@ export function ItsaplanIssueList({
           issues={issues}
           metadata={metadata}
           allIssues={allIssues}
+          totalCount={totalCount}
+          expandMatches={expandMatches}
           onOpenIssue={onSelect}
           filterable
         />

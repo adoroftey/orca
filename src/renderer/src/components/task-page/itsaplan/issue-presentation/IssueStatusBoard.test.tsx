@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import type {
   ItsaplanIssueSummary,
@@ -94,4 +94,63 @@ it('resets the filter for a changed dataset or project and preserves it for stat
     />
   )
   expect(screen.getByRole('button', { name: 'All (2)' })).toHaveAttribute('aria-pressed', 'true')
+})
+
+it('adapts to the observed container and falls back when matrix no longer fits', () => {
+  let resize: (width: number) => void = () => {}
+  const original = globalThis.ResizeObserver
+  globalThis.ResizeObserver = class implements ResizeObserver {
+    constructor(callback: ResizeObserverCallback) {
+      resize = (width) => {
+        const entry: ResizeObserverEntry = {
+          target: document.createElement('div'),
+          contentRect: new DOMRectReadOnly(0, 0, width, 0),
+          borderBoxSize: [],
+          contentBoxSize: [],
+          devicePixelContentBoxSize: []
+        }
+        callback([entry], this)
+      }
+    }
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  try {
+    render(<IssueStatusBoard issues={[issue(1, 1)]} metadata={metadata} onOpenIssue={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Matrix' })).toBeDisabled()
+    act(() => resize(1400))
+    expect(screen.getByRole('button', { name: 'Matrix' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Auto' })).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByRole('button', { name: 'Matrix' }))
+    act(() => resize(900))
+    expect(screen.getByRole('button', { name: 'Matrix' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Todo 1' })).toHaveAttribute('aria-expanded', 'true')
+    act(() => resize(600))
+    expect(screen.getByRole('button', { name: 'Todo 1' })).toHaveAttribute('aria-expanded', 'true')
+  } finally {
+    globalThis.ResizeObserver = original
+  }
+})
+it('filters unknown stages and exposes a named board landmark', () => {
+  render(
+    <IssueStatusBoard
+      issues={[issue(1, 1), issue(2, 99)]}
+      metadata={metadata}
+      onOpenIssue={vi.fn()}
+    />
+  )
+  expect(screen.getByRole('region', { name: 'Board' })).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Unknown (1)' }))
+  expect(screen.getByRole('button', { name: 'Unknown (1)' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+  expect(screen.getByText('Issue 2')).toBeInTheDocument()
+  expect(screen.queryByText('Issue 1')).not.toBeInTheDocument()
+})
+
+it('uses a named group for compact boards', () => {
+  render(<IssueStatusBoard issues={[]} metadata={metadata} compact onOpenIssue={vi.fn()} />)
+  expect(screen.getByRole('group', { name: 'Board' })).toBeInTheDocument()
 })

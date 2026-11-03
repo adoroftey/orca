@@ -373,6 +373,54 @@ it('groups the limited recent issues by stage and shows their labels', () => {
   expect(screen.queryByText('Older task')).not.toBeInTheDocument()
 })
 
+it('keeps the full match count and parent context when recent issues are limited', () => {
+  const details: ItsaplanProjectDetails = {
+    ...metadata,
+    columns: [{ id: 1, name: 'In progress', stateType: 'started', color: '', position: 1 }]
+  }
+  const parent = {
+    id: 100,
+    sequenceNumber: 100,
+    identifier: 'P-100',
+    title: 'Parent context',
+    columnId: 1,
+    assigneeUserId: null,
+    priority: null,
+    projectId: 1,
+    description: '',
+    labelIds: [],
+    createdAt: '2026-01-01',
+    updatedAt: '2026-01-01'
+  }
+  const children = Array.from({ length: 8 }, (_, index) => ({
+    ...parent,
+    id: index + 1,
+    sequenceNumber: index + 1,
+    identifier: `P-${index + 1}`,
+    title: `Child ${index + 1}`,
+    parentId: 100,
+    updatedAt: `2026-01-${String(index + 2).padStart(2, '0')}`
+  }))
+  const open = vi.fn()
+  render(
+    <ItsaplanDashboardWidget
+      widget={readDashboardWidgets([{ type: 'recent_issues', config: { limit: 7 } }])[0]}
+      api={makeApi()}
+      planning={makePlanning()}
+      project={project}
+      metadata={details}
+      issues={[parent, ...children]}
+      onOpenIssue={open}
+    />
+  )
+  expect(screen.getByText(/Selected: 7.*Loaded: 7.*Total matching: 9/)).toBeInTheDocument()
+  expect(screen.getByText('Context')).toBeInTheDocument()
+  expect(screen.getByText(/All children: 0\/8/)).toBeInTheDocument()
+  expect(screen.queryByText('Child 1')).not.toBeInTheDocument()
+  fireEvent.click(screen.getAllByRole('button', { name: 'P-100 Parent context' })[0])
+  expect(open).toHaveBeenCalledWith(100)
+})
+
 it('renders a status movement with actor, stages and timestamp', async () => {
   const planning = makePlanning({
     analytics: vi.fn().mockResolvedValue({

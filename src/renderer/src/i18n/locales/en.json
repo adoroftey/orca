@@ -24051,6 +24051,20 @@
       "unknownStage": "Unknown stage",
       "assignee": "Assignee",
       "delegate": "Delegate"
+    },
+    "execution": {
+      "unknown": "Unknown",
+      "group": "Group",
+      "context": "Context",
+      "allChildren": "Loaded children",
+      "canceled": "Canceled",
+      "ungrouped": "Ungrouped",
+      "selection": "Selected",
+      "loaded": "Loaded",
+      "total": "Total matching",
+      "auto": "Auto",
+      "stages": "Stages",
+      "matrix": "Matrix"
     }
   }
 }

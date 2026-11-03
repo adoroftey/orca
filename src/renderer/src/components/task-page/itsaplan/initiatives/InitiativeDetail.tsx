@@ -58,49 +58,57 @@ export function InitiativeDetail({
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
   const alive = useRef(true)
+  const [issueVersion, setIssueVersion] = useState(0)
+  const requestGeneration = useRef(0)
+  const previousScope = useRef('')
   useEffect(() => {
     alive.current = true
     let active = true
-    setLoading(true)
+    const generation = ++requestGeneration.current
+    const scope = JSON.stringify([id, projectRef, refreshVersion])
+    if (previousScope.current !== scope) {
+      previousScope.current = scope
+      setLoading(true)
+    }
     setFeedLoading(true)
     setError(null)
     setFeedError(null)
     planning
       .getInitiative(id)
       .then((data) => {
-        if (active) {
+        if (active && requestGeneration.current === generation) {
           setItem(data)
         }
       })
       .catch(() => {
-        if (active) {
+        if (active && requestGeneration.current === generation) {
           setError(
             translate('itsaplan.planning.initiatives.detailError', 'Unable to load initiative.')
           )
         }
       })
       .finally(() => {
-        if (active) {
+        if (active && requestGeneration.current === generation) {
           setLoading(false)
         }
       })
     planning
       .initiativeFeed(id)
       .then((data) => {
-        if (active) {
+        if (active && requestGeneration.current === generation) {
           setFeed(data.items)
           setCursor(data.nextCursor)
         }
       })
       .catch(() => {
-        if (active) {
+        if (active && requestGeneration.current === generation) {
           setFeedError(
             translate('itsaplan.planning.initiatives.feedError', 'Unable to load activity.')
           )
         }
       })
       .finally(() => {
-        if (active) {
+        if (active && requestGeneration.current === generation) {
           setFeedLoading(false)
         }
       })
@@ -108,14 +116,16 @@ export function InitiativeDetail({
       active = false
       alive.current = false
     }
-  }, [planning, id, refreshVersion])
+  }, [planning, id, projectRef, refreshVersion, issueVersion])
   const save = async (updates: Partial<PlanningInitiativeInput>) => {
     setBusy(true)
     setError(null)
     try {
       const updated = await planning.updateInitiative(id, updates)
       if (alive.current) {
+        requestGeneration.current++
         setItem(updated)
+        setIssueVersion((version) => version + 1)
         setEditing(false)
         onChanged()
       }
@@ -157,20 +167,21 @@ export function InitiativeDetail({
     }
     setFeedLoading(true)
     setFeedError(null)
+    const generation = requestGeneration.current
     try {
       const page = await planning.initiativeFeed(id, { cursor })
-      if (alive.current) {
+      if (alive.current && requestGeneration.current === generation) {
         setFeed((old) => [...old, ...page.items])
         setCursor(page.nextCursor)
       }
     } catch {
-      if (alive.current) {
+      if (alive.current && requestGeneration.current === generation) {
         setFeedError(
           translate('itsaplan.planning.initiatives.feedError', 'Unable to load activity.')
         )
       }
     } finally {
-      if (alive.current) {
+      if (alive.current && requestGeneration.current === generation) {
         setFeedLoading(false)
       }
     }
@@ -268,12 +279,17 @@ export function InitiativeDetail({
               />
             </div>
             <InitiativeIssues
+              key={`${projectRef}:${id}`}
               api={api}
               planning={planning}
               projectRef={projectRef}
               initiativeId={id}
               metadata={metadata}
               onOpenIssue={onOpenIssue}
+              onIssuesChanged={() => {
+                requestGeneration.current++
+                setIssueVersion((version) => version + 1)
+              }}
               refreshVersion={refreshVersion}
             />
             <section>

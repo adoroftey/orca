@@ -20,6 +20,7 @@ export function InitiativeIssues({
   initiativeId,
   metadata,
   onOpenIssue,
+  onIssuesChanged,
   refreshVersion = 0
 }: {
   api: ItsaplanApi
@@ -28,6 +29,7 @@ export function InitiativeIssues({
   initiativeId: number
   metadata: ItsaplanProjectDetails
   onOpenIssue: (id: number) => void
+  onIssuesChanged: () => void
   refreshVersion?: number
 }) {
   const [issues, setIssues] = useState<ItsaplanIssue[]>([])
@@ -113,6 +115,7 @@ export function InitiativeIssues({
       await api.updateIssue(id, { initiativeId: value })
       if (lifetime.current) {
         setVersion((v) => v + 1)
+        onIssuesChanged()
         setChoice('none')
       }
     } catch {
@@ -231,6 +234,7 @@ export function InitiativeIssues({
                     if (lifetime.current) {
                       setCreating(false)
                       setVersion((v) => v + 1)
+                      onIssuesChanged()
                     }
                   } catch {
                     if (lifetime.current) {

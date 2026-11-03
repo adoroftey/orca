@@ -33,7 +33,10 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { ViewCalendar } from './ViewCalendar'
 import { ViewKanban } from './ViewKanban'
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+})
 const metadata: ItsaplanProjectDetails = {
   project: { id: 1, key: 'P', ref: 'p', name: 'P' },
   columns: [
@@ -218,9 +221,10 @@ const apiDefaults: ItsaplanApi = {
 
 import { IssueCard } from './ViewIssueLayout'
 it('renders saved card property values using the existing formatter', () => {
+  vi.setSystemTime(new Date('2026-03-02T12:00:00Z'))
   const savedIssue = {
     ...issue,
-    statusSince: new Date(Date.now() - 86400000).toISOString(),
+    statusSince: '2026-03-01T12:00:00.000Z',
     fieldValues: [{ fieldId: 5, value: 'Custom value', optionIds: [] }]
   }
   render(

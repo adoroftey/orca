@@ -4,7 +4,10 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import type { ItsaplanProjectDetails } from '../../../../../../shared/itsaplan/types'
 import { IssueSummaryCard } from './IssueSummaryCard'
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+})
 it('separates title, description, status, label and each child status', () => {
   const metadata: ItsaplanProjectDetails = {
     project: { id: 1, key: 'P', ref: 'p', name: 'P' },
@@ -43,7 +46,8 @@ it('separates title, description, status, label and each child status', () => {
   expect(screen.getByText(/Agent/)).toBeInTheDocument()
 })
 it('shows real archive state and one labeled relative updated time', () => {
-  const stamp = new Date(Date.now() - 86400000).toISOString()
+  vi.setSystemTime(new Date('2026-03-02T12:00:00Z'))
+  const stamp = '2026-03-01T12:00:00.000Z'
   const issue = {
     id: 3,
     sequenceNumber: 3,

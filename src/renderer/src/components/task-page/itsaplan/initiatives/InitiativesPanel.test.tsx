@@ -1,8 +1,11 @@
 // @vitest-environment happy-dom
 import type { ItsaplanApi, ItsaplanProjectDetails } from '../../../../../../shared/itsaplan/types'
-import type { ItsaplanPlanningApi } from '../../../../../../shared/itsaplan/planning-types'
+import type {
+  ItsaplanPlanningApi,
+  PlanningActivityItem
+} from '../../../../../../shared/itsaplan/planning-types'
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { ItsaplanInitiativesPanel } from './InitiativesPanel'
 
@@ -248,6 +251,181 @@ it('links an existing issue to the selected initiative', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Link issue' }))
   await waitFor(() => expect(api.updateIssue).toHaveBeenCalledWith(43, { initiativeId: 1 }))
 })
+it.each(['create', 'link', 'unlink'])(
+  'refreshes server progress and activity after %s',
+  async (action) => {
+    const issue = {
+      id: 42,
+      identifier: 'P-42',
+      title: 'Task',
+      initiativeId: action === 'unlink' ? 1 : null
+    }
+    const updated = { ...item, progress: { ...item.progress, total: action === 'unlink' ? 0 : 1 } }
+    const planning = fixturePlanning({
+      listInitiatives: vi
+        .fn()
+        .mockResolvedValue({ items: [item], total: 1, page: 1, pageSize: 20 }),
+      getInitiative: vi.fn().mockResolvedValueOnce(item).mockResolvedValue(updated),
+      initiativeFeed: vi
+        .fn()
+        .mockResolvedValueOnce({ items: [], nextCursor: null })
+        .mockResolvedValue({
+          items: [
+            {
+              id: 8,
+              kind: 'activity',
+              action: 'updated',
+              body: 'Server activity',
+              createdAt: '2026-01-01'
+            }
+          ],
+          nextCursor: null
+        })
+    })
+    const api = fixtureApi({
+      listIssues: vi.fn().mockResolvedValue(action === 'create' ? [] : [issue]),
+      updateIssue: vi.fn().mockResolvedValue(issue),
+      createIssue: vi.fn().mockResolvedValue(issue)
+    })
+    render(
+      <ItsaplanInitiativesPanel
+        api={api}
+        planning={planning}
+        project={project}
+        metadata={{
+          ...metadata,
+          columns: [{ id: 1, name: 'In progress', stateType: 'started', color: '', position: 1 }],
+          permissions: { ...metadata.permissions, work_items: { edit: true, create: true } }
+        }}
+        onOpenIssue={vi.fn()}
+      />
+    )
+    fireEvent.click(await screen.findByRole('button', { name: 'First' }))
+    await screen.findByText(/Progress:/)
+    if (action === 'create') {
+      fireEvent.click(await screen.findByRole('button', { name: 'New issue' }))
+      fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Created' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Create issue' }))
+    } else if (action === 'link') {
+      fireEvent.click(await screen.findByLabelText('Choose issue'))
+      fireEvent.click(await screen.findByRole('option', { name: 'P-42 Task' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Link issue' }))
+    } else {
+      fireEvent.click(await screen.findByRole('button', { name: 'Unlink' }))
+    }
+    expect(await screen.findByText('Server activity', { exact: false })).toBeInTheDocument()
+    expect(
+      screen.getByText(new RegExp(`Progress: 0 / ${action === 'unlink' ? 0 : 1}`))
+    ).toBeInTheDocument()
+    expect(planning.getInitiative).toHaveBeenCalledTimes(2)
+    expect(planning.initiativeFeed).toHaveBeenCalledTimes(2)
+    expect(planning.listInitiatives).toHaveBeenCalledTimes(action === 'create' ? 2 : 1)
+  }
+)
+
+it('ignores an older activity page after a successful issue mutation', async () => {
+  let resolvePage!: (value: { items: PlanningActivityItem[]; nextCursor: null }) => void
+  const pending = new Promise<{ items: PlanningActivityItem[]; nextCursor: null }>((resolve) => {
+    resolvePage = resolve
+  })
+  const planning = fixturePlanning({
+    listInitiatives: vi.fn().mockResolvedValue({ items: [item], total: 1, page: 1, pageSize: 20 }),
+    getInitiative: vi.fn().mockResolvedValue(item),
+    initiativeFeed: vi
+      .fn()
+      .mockResolvedValueOnce({ items: [], nextCursor: { ts: '2026-01-01', id: 1 } })
+      .mockReturnValueOnce(pending)
+      .mockResolvedValue({ items: [], nextCursor: null })
+  })
+  const issue = { id: 42, identifier: 'P-42', title: 'Task', initiativeId: null }
+  const api = fixtureApi({
+    listIssues: vi.fn().mockResolvedValue([issue]),
+    updateIssue: vi.fn().mockResolvedValue(issue)
+  })
+  render(
+    <ItsaplanInitiativesPanel
+      api={api}
+      planning={planning}
+      project={project}
+      metadata={{
+        ...metadata,
+        permissions: { ...metadata.permissions, work_items: { edit: true } }
+      }}
+      onOpenIssue={vi.fn()}
+    />
+  )
+  fireEvent.click(await screen.findByRole('button', { name: 'First' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Load more activity' }))
+  fireEvent.click(await screen.findByLabelText('Choose issue'))
+  fireEvent.click(await screen.findByRole('option', { name: 'P-42 Task' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Link issue' }))
+  await waitFor(() => expect(planning.initiativeFeed).toHaveBeenCalledTimes(3))
+  await act(async () =>
+    resolvePage({
+      items: [
+        {
+          id: 99,
+          kind: 'activity',
+          actorName: null,
+          body: 'Stale activity',
+          createdAt: '2026-01-01'
+        }
+      ],
+      nextCursor: null
+    })
+  )
+  expect(screen.queryByText(/Stale activity/)).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Load more activity' })).not.toBeInTheDocument()
+  expect(screen.getByText('No activity yet.')).toBeInTheDocument()
+})
+
+it('does not overwrite a saved initiative with a pending pre-save refresh', async () => {
+  let resolveOld!: (value: typeof item) => void
+  const oldRefresh = new Promise<typeof item>((resolve) => {
+    resolveOld = resolve
+  })
+  const saved = { ...item, title: 'Saved title' }
+  const planning = fixturePlanning({
+    listInitiatives: vi.fn().mockResolvedValue({ items: [item], total: 1, page: 1, pageSize: 20 }),
+    getInitiative: vi
+      .fn()
+      .mockResolvedValueOnce(item)
+      .mockReturnValueOnce(oldRefresh)
+      .mockResolvedValue(saved),
+    initiativeFeed: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
+    updateInitiative: vi.fn().mockResolvedValue(saved)
+  })
+  const issue = { id: 42, identifier: 'P-42', title: 'Task', initiativeId: null }
+  const api = fixtureApi({
+    listIssues: vi.fn().mockResolvedValue([issue]),
+    updateIssue: vi.fn().mockResolvedValue(issue)
+  })
+  render(
+    <ItsaplanInitiativesPanel
+      api={api}
+      planning={planning}
+      project={project}
+      metadata={{
+        ...metadata,
+        permissions: { ...metadata.permissions, work_items: { edit: true } }
+      }}
+      onOpenIssue={vi.fn()}
+    />
+  )
+  fireEvent.click(await screen.findByRole('button', { name: 'First' }))
+  fireEvent.click(await screen.findByLabelText('Choose issue'))
+  fireEvent.click(await screen.findByRole('option', { name: 'P-42 Task' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Link issue' }))
+  await waitFor(() => expect(planning.getInitiative).toHaveBeenCalledTimes(2))
+  fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
+  fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Saved title' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+  await screen.findByRole('heading', { name: 'Saved title' })
+  await waitFor(() => expect(planning.getInitiative).toHaveBeenCalledTimes(3))
+  await act(async () => resolveOld(item))
+  expect(screen.getByRole('heading', { name: 'Saved title' })).toBeInTheDocument()
+})
+
 it('respects denied work item permissions', async () => {
   const issue = { id: 42, identifier: 'P-42', title: 'Linked', initiativeId: 1 }
   const planning = fixturePlanning({

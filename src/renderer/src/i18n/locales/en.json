@@ -24064,7 +24064,8 @@
       "total": "Total matching",
       "auto": "Auto",
       "stages": "Stages",
-      "matrix": "Matrix"
+      "matrix": "Matrix",
+      "onlyStatusesWithIssues": "Only statuses with issues"
     }
   }
 }

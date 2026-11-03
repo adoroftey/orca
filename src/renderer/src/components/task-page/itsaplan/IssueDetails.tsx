@@ -1,3 +1,4 @@
+import { IssueStatusBadge } from './issue-presentation/IssueStatusBadge'
 import { useEffect, useId, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -191,8 +192,17 @@ export function ItsaplanIssueDetails({
             <p className="text-xs text-muted-foreground">{issue.identifier}</p>
             <h2 className="mt-1 text-lg font-medium">{issue.title}</h2>
             <p className="mt-2 text-xs text-muted-foreground">
-              {metadata.columns.find((column) => column.id === issue.columnId)?.name} ·{' '}
-              {issue.priority ?? translate('itsaplan.priority.none', 'No priority')} ·{' '}
+              {(() => {
+                const column = metadata.columns.find((entry) => entry.id === issue.columnId)
+                return column ? (
+                  <IssueStatusBadge
+                    name={column.name}
+                    color={column.color}
+                    stateType={column.stateType}
+                  />
+                ) : null
+              })()}{' '}
+              · {issue.priority ?? translate('itsaplan.priority.none', 'No priority')} ·{' '}
               {metadata.assignees.find((member) => member.userId === issue.assigneeUserId)?.name ??
                 translate('itsaplan.assignee.none', 'Unassigned')}
             </p>

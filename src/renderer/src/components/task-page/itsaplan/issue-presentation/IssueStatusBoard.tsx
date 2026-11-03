@@ -1,10 +1,13 @@
 import { useState } from 'react'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import type {
   ItsaplanIssueSummary,
   ItsaplanProjectDetails
 } from '../../../../../../shared/itsaplan/types'
+import { IssueStatusMark } from './IssueStatusMark'
+import { issueStatusColor } from './issue-status-color'
 import { IssueSummaryCard } from './IssueSummaryCard'
 import { IssueExecutionStages } from './IssueExecutionStages'
 import { IssueExecutionMatrix } from './IssueExecutionMatrix'
@@ -39,6 +42,7 @@ export function IssueStatusBoard({
   expandMatches?: boolean
 }) {
   const [filterState, setFilterState] = useState({ scope: '', filter: 'all' })
+  const [onlyWithIssues, setOnlyWithIssues] = useState(true)
   const [layout, setLayout] = useState<'auto' | 'stages' | 'matrix' | 'list'>('auto')
   const { ref, width } = useExecutionBoardWidth()
   const dataset = issues
@@ -56,7 +60,9 @@ export function IssueStatusBoard({
         ? blocked
         : issues.filter((issue) => issueExecutionStageKey(issue, metadata) === filter)
   const stages = executionStages(issues, metadata)
-  const visibleStages = stages.filter((stage) => stage.count > 0 || stage.key === filter)
+  const visibleStages = onlyWithIssues
+    ? stages.filter((stage) => stage.count > 0 || stage.key === filter)
+    : stages
   const fits = width >= 1180 && width >= executionMatrixMinWidth(visibleStages)
   const actualLayout = compact
     ? layout === 'list'
@@ -106,9 +112,12 @@ export function IssueStatusBoard({
               key={stage.key}
               size="sm"
               variant={filter === stage.key ? 'secondary' : 'ghost'}
+              className="border"
+              style={{ borderColor: issueStatusColor(stage.color) }}
               aria-pressed={filter === stage.key}
               onClick={() => setFilter(stage.key)}
             >
+              <IssueStatusMark color={stage.color} stateType={stage.stateType} />
               {stage.name} ({stage.count})
             </Button>
           ))}
@@ -155,6 +164,15 @@ export function IssueStatusBoard({
           </Button>
         ))}
       </div>
+      {actualLayout !== 'list' && (
+        <label className="flex w-fit cursor-pointer items-center gap-2 text-sm">
+          <Checkbox
+            checked={onlyWithIssues}
+            onCheckedChange={(checked) => setOnlyWithIssues(checked === true)}
+          />
+          {translate('itsaplan.execution.onlyStatusesWithIssues', 'Only statuses with issues')}
+        </label>
+      )}
       {selected.length === 0 && (
         <p className="text-sm text-muted-foreground">
           {translate('itsaplan.presentation.noIssues', 'No issues in this selection.')}
@@ -175,7 +193,7 @@ export function IssueStatusBoard({
         <IssueExecutionStages
           key={JSON.stringify([scope, filter, expandMatches])}
           issues={selected}
-          stages={stages}
+          stages={visibleStages}
           metadata={metadata}
           allIssues={allIssues}
           onOpenIssue={onOpenIssue}

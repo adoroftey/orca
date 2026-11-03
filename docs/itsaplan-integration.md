@@ -34,6 +34,11 @@ at most 500 matches; narrow a search that reaches the cap. This endpoint has no 
 pagination. The board endpoint supplies the complete active list, while full descriptions
 are loaded separately for an issue.
 
+The **Only statuses with issues** option is enabled by default in board layouts. Turn it
+off to show all project statuses, including empty ones; the stage filters and counts stay
+unchanged. Status dots and borders use the project’s status colors. The option is local
+to the current board and does not change a Saved View.
+
 The Issues board and initiative linked issues offer **Auto**, **Stages**, **Matrix**,
 and **List** layouts. Auto uses Matrix when its container is at least 1180 pixels wide
 and all visible stage columns fit; otherwise it uses Stages. Stages places each issue in

@@ -1,4 +1,6 @@
 import { Badge } from '@/components/ui/badge'
+import { issueStatusColor } from './issue-status-color'
+import { IssueStatusBadge } from './IssueStatusBadge'
 import { translate } from '@/i18n/i18n'
 import type {
   ItsaplanIssueSummary,
@@ -33,31 +35,41 @@ export function IssuePropertyValue({
       </span>
     )
   }
+  if (field === 'status') {
+    const column = metadata?.columns.find((item) => item.id === issue.columnId)
+    return column ? (
+      <IssueStatusBadge name={column.name} color={column.color} stateType={column.stateType} />
+    ) : (
+      <IssueStatusBadge name={value || '—'} />
+    )
+  }
   const values =
-    field === 'status'
-      ? [metadata?.columns.find((item) => item.id === issue.columnId)?.name]
-      : field === 'type'
-        ? [metadata?.issueTypes?.find((item) => item.id === issue.typeId)?.name]
-        : field === 'priority'
-          ? [issue.priority]
-          : field === 'labels'
-            ? issue.labelIds
-                ?.map((id) => metadata?.labels?.find((item) => item.id === id)?.name)
-                .filter(Boolean)
-            : undefined
+    field === 'type'
+      ? [metadata?.issueTypes?.find((item) => item.id === issue.typeId)]
+      : field === 'labels'
+        ? issue.labelIds?.map((id) => metadata?.labels?.find((item) => item.id === id))
+        : undefined
   if (values) {
-    const labels = values.filter((item): item is string => !!item)
-    return labels.length ? (
+    const items = values.filter((item): item is NonNullable<typeof item> => !!item)
+    return items.length ? (
       <span className="inline-flex flex-wrap gap-1">
-        {labels.map((label) => (
-          <Badge key={label} variant="secondary">
-            {label}
+        {items.map((item) => (
+          <Badge key={item.id} variant="outline">
+            <span
+              aria-hidden="true"
+              className="size-2 rounded-full"
+              style={{ backgroundColor: issueStatusColor(item.color) }}
+            />
+            {item.name}
           </Badge>
         ))}
       </span>
     ) : (
       <span>{value || '—'}</span>
     )
+  }
+  if (field === 'priority' && issue.priority) {
+    return <Badge variant="secondary">{issue.priority}</Badge>
   }
   return <span>{value || '—'}</span>
 }

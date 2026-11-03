@@ -10,6 +10,7 @@ export type ExecutionStage = {
   name: string
   stateType: string
   count: number
+  color?: string
 }
 export type ExecutionRow = {
   key: string
@@ -46,6 +47,7 @@ export function executionStages(
     columnId: column.id,
     name: column.name,
     stateType: column.stateType,
+    color: column.color,
     count: counts.get(String(column.id)) ?? 0
   }))
   if (counts.has('unknown')) {

@@ -89,3 +89,30 @@ it('preserves the matched parent action in its stage cell', () => {
   expect(unlink).toHaveBeenCalledWith(1)
   expect(within(cells[1]).queryByRole('button', { name: 'Unlink 1' })).not.toBeInTheDocument()
 })
+it('uses validated status colors for borders and decorative dots without coloring text', () => {
+  const colored = {
+    ...metadata,
+    columns: [
+      { ...metadata.columns[0], color: '#3b82f6' },
+      { ...metadata.columns[1], color: 'not-a-color' }
+    ]
+  }
+  const items = [issue(1, 1)]
+  render(
+    <IssueExecutionMatrix
+      rows={buildExecutionRows(items, items, colored)}
+      stages={executionStages(items, colored)}
+      metadata={colored}
+      allIssues={items}
+      onOpenIssue={vi.fn()}
+    />
+  )
+  const header = screen.getByRole('columnheader', { name: 'Todo 1' })
+  expect(header.style.borderColor).toBe('#3b82f6')
+  expect(header.style.color).toBe('')
+  expect(header.querySelector('[aria-hidden="true"]')).toHaveStyle({ color: '#3b82f6' })
+  expect(screen.getAllByRole('cell')[0].style.borderColor).toBe('#3b82f6')
+  expect(screen.getByRole('columnheader', { name: 'Done 0' }).style.borderColor).toBe(
+    'var(--muted-foreground)'
+  )
+})

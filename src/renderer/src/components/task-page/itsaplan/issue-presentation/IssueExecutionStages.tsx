@@ -10,6 +10,9 @@ import {
   issueExecutionStageKey,
   type ExecutionStage
 } from './execution-board-model'
+import { IssueStatusMark } from './IssueStatusMark'
+import { issueStatusColor } from './issue-status-color'
+import { IssueStatusBadge } from './IssueStatusBadge'
 import { IssueSummaryCard } from './IssueSummaryCard'
 
 export function IssueExecutionStages({
@@ -33,7 +36,7 @@ export function IssueExecutionStages({
   selectedStage?: string
   expandMatches?: boolean
 }) {
-  const populated = stages.filter((stage) => stage.count > 0 || stage.key === selectedStage)
+  const populated = stages
   const hasActive = populated.some(
     (stage) =>
       stage.count > 0 &&
@@ -54,7 +57,11 @@ export function IssueExecutionStages({
     const open = overrides[stage.key] ?? defaultOpen
     const rows = buildExecutionRows(matches, allIssues, metadata)
     return (
-      <section key={stage.key} className="min-w-0 rounded-md border bg-muted/30 p-2">
+      <section
+        key={stage.key}
+        className="min-w-0 rounded-md border bg-muted/30 p-2"
+        style={{ borderColor: issueStatusColor(stage.color) }}
+      >
         <h3>
           <button
             type="button"
@@ -62,7 +69,12 @@ export function IssueExecutionStages({
             aria-expanded={open}
             onClick={() => setOverrides((prev) => ({ ...prev, [stage.key]: !open }))}
           >
-            {stage.name} <span className="text-muted-foreground">{stage.count}</span>
+            <span className="inline-flex items-center gap-2">
+              <IssueStatusMark color={stage.color} stateType={stage.stateType} />
+              <span>
+                {stage.name} <span className="text-muted-foreground">{stage.count}</span>
+              </span>
+            </span>
           </button>
         </h3>
         {open && (
@@ -78,10 +90,20 @@ export function IssueExecutionStages({
                     >
                       {row.parent.identifier} {row.parent.title}
                     </button>
-                    <span className="text-muted-foreground">
-                      {metadata?.columns.find((column) => column.id === row.parent?.columnId)
-                        ?.name ?? translate('itsaplan.presentation.unknownStage', 'Unknown stage')}
-                    </span>
+                    <IssueStatusBadge
+                      name={
+                        metadata?.columns.find((column) => column.id === row.parent?.columnId)
+                          ?.name ?? translate('itsaplan.presentation.unknownStage', 'Unknown stage')
+                      }
+                      color={
+                        metadata?.columns.find((column) => column.id === row.parent?.columnId)
+                          ?.color
+                      }
+                      stateType={
+                        metadata?.columns.find((column) => column.id === row.parent?.columnId)
+                          ?.stateType
+                      }
+                    />
                     {!issues.some((issue) => issue.id === row.parent?.id) && (
                       <Badge variant="secondary">
                         {translate('itsaplan.execution.context', 'Context')}

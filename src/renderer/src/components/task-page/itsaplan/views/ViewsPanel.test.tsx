@@ -165,7 +165,9 @@ it('moves a card to an empty status only with work item edit permission', async 
     />
   )
   fireEvent.click(await screen.findByRole('button', { name: 'Board' }))
-  const target = screen.getByText('Done (0)').parentElement?.querySelector('div')
+  const target = screen
+    .getByRole('button', { name: 'Done (0)' })
+    .parentElement?.querySelector('div')
   expect(target).toBeTruthy()
   fireEvent.drop(target!, { dataTransfer: { getData: () => '1' } })
   await waitFor(() => expect(api.updateIssue).toHaveBeenCalledWith(1, { columnId: 2 }))

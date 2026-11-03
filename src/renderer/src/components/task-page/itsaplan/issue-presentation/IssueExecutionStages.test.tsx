@@ -87,3 +87,19 @@ it('keeps the matched parent action in its own stage', () => {
   expect(unlink).toHaveBeenCalledWith(1)
   expect(screen.queryByRole('button', { name: 'Unlink 2' })).not.toBeInTheDocument()
 })
+it('uses a status border and decorative dot while keeping text neutral', () => {
+  const colored = { ...metadata, columns: [{ ...metadata.columns[0], color: '#3b82f6' }] }
+  render(
+    <IssueExecutionStages
+      issues={[]}
+      stages={executionStages([], colored)}
+      metadata={colored}
+      allIssues={[]}
+      onOpenIssue={vi.fn()}
+    />
+  )
+  const button = screen.getByRole('button', { name: 'Waiting 0' })
+  expect(button.closest('section')?.style.borderColor).toBe('#3b82f6')
+  expect(button.style.color).toBe('')
+  expect(button.querySelector('[aria-hidden="true"]')).toHaveStyle({ color: '#3b82f6' })
+})

@@ -154,3 +154,127 @@ it('uses a named group for compact boards', () => {
   render(<IssueStatusBoard issues={[]} metadata={metadata} compact onOpenIssue={vi.fn()} />)
   expect(screen.getByRole('group', { name: 'Board' })).toBeInTheDocument()
 })
+
+it('toggles empty statuses in stages while preserving the selected filter', () => {
+  render(<IssueStatusBoard issues={[issue(1, 1)]} metadata={metadata} onOpenIssue={vi.fn()} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Todo (1)' }))
+  const checkbox = screen.getByRole('checkbox', { name: 'Only statuses with issues' })
+  expect(checkbox).toBeChecked()
+  fireEvent.click(checkbox)
+  expect(screen.getByRole('heading', { name: 'Done 0' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Todo (1)' })).toHaveAttribute('aria-pressed', 'true')
+  fireEvent.click(checkbox)
+  expect(screen.queryByRole('heading', { name: 'Done 0' })).not.toBeInTheDocument()
+})
+
+it('shows all metadata statuses for an empty board when requested', () => {
+  render(<IssueStatusBoard issues={[]} metadata={metadata} onOpenIssue={vi.fn()} />)
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Only statuses with issues' }))
+  expect(screen.getByRole('heading', { name: 'Todo 0' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Done 0' })).toBeInTheDocument()
+})
+
+it('toggles empty matrix columns and recalculates the fit', () => {
+  let resize: (width: number) => void = () => {}
+  const original = globalThis.ResizeObserver
+  globalThis.ResizeObserver = class implements ResizeObserver {
+    constructor(callback: ResizeObserverCallback) {
+      resize = (width) =>
+        callback(
+          [
+            {
+              target: document.createElement('div'),
+              contentRect: new DOMRectReadOnly(0, 0, width, 0),
+              borderBoxSize: [],
+              contentBoxSize: [],
+              devicePixelContentBoxSize: []
+            }
+          ],
+          this
+        )
+    }
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  try {
+    render(<IssueStatusBoard issues={[issue(1, 1)]} metadata={metadata} onOpenIssue={vi.fn()} />)
+    act(() => resize(1400))
+    expect(screen.queryByRole('columnheader', { name: 'Done 0' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Only statuses with issues' }))
+    expect(screen.getByRole('columnheader', { name: 'Done 0' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Only statuses with issues' }))
+    expect(screen.queryByRole('columnheader', { name: 'Done 0' })).not.toBeInTheDocument()
+  } finally {
+    globalThis.ResizeObserver = original
+  }
+})
+
+it('falls back from Auto matrix when showing all statuses exceeds available width', () => {
+  let resize: (width: number) => void = () => {}
+  const original = globalThis.ResizeObserver
+  globalThis.ResizeObserver = class implements ResizeObserver {
+    constructor(callback: ResizeObserverCallback) {
+      resize = (width) =>
+        callback(
+          [
+            {
+              target: document.createElement('div'),
+              contentRect: new DOMRectReadOnly(0, 0, width, 0),
+              borderBoxSize: [],
+              contentBoxSize: [],
+              devicePixelContentBoxSize: []
+            }
+          ],
+          this
+        )
+    }
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  const many = {
+    ...metadata,
+    columns: [
+      ...metadata.columns,
+      ...[3, 4, 5].map((id) => ({
+        id,
+        name: `Stage ${id}`,
+        stateType: 'started',
+        color: '',
+        position: id
+      }))
+    ]
+  }
+  try {
+    render(<IssueStatusBoard issues={[issue(1, 1)]} metadata={many} onOpenIssue={vi.fn()} />)
+    act(() => resize(1400))
+    expect(screen.getByRole('table')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Only statuses with issues' }))
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Stage 5 0' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Matrix' })).toBeDisabled()
+  } finally {
+    globalThis.ResizeObserver = original
+  }
+})
+
+it('shows status color and decorative state mark on filters without changing selection', () => {
+  const colored = {
+    ...metadata,
+    columns: [
+      { ...metadata.columns[0], color: '#3b82f6' },
+      { ...metadata.columns[1], color: 'invalid' }
+    ]
+  }
+  render(<IssueStatusBoard issues={[issue(1, 1)]} metadata={colored} onOpenIssue={vi.fn()} />)
+  const todo = screen.getByRole('button', { name: 'Todo (1)' })
+  expect(todo.style.borderColor).toBe('#3b82f6')
+  expect(todo.style.color).toBe('')
+  expect(todo.querySelector('[aria-hidden="true"]')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Done (0)' }).style.borderColor).toBe(
+    'var(--muted-foreground)'
+  )
+  fireEvent.click(todo)
+  expect(todo).toHaveAttribute('aria-pressed', 'true')
+})

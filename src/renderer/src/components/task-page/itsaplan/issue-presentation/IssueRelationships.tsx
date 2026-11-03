@@ -4,6 +4,7 @@ import type {
   ItsaplanIssueSummary,
   ItsaplanProjectDetails
 } from '../../../../../../shared/itsaplan/types'
+import { IssueStatusBadge } from './IssueStatusBadge'
 import { issueRelations, issueSubtaskProgress } from './issue-progress'
 
 const EMPTY_ISSUES: ItsaplanIssueSummary[] = []
@@ -28,7 +29,7 @@ export function IssueRelationships({
     issue.parentId !== issue.id ? allIssues.find((item) => item.id === issue.parentId) : undefined
   const progress = issueSubtaskProgress(issue, allIssues, metadata)
   const status = (item: ItsaplanIssueSummary | undefined) =>
-    metadata?.columns.find((column) => column.id === item?.columnId)?.name
+    metadata?.columns.find((column) => column.id === item?.columnId)
   return (
     <div className="space-y-1 text-xs text-muted-foreground">
       {parent && (
@@ -59,7 +60,17 @@ export function IssueRelationships({
                 >
                   {child.identifier} {child.title}
                 </button>
-                {status(child) && <span> · {status(child)}</span>}
+                {status(child) && (
+                  <>
+                    {' '}
+                    ·{' '}
+                    <IssueStatusBadge
+                      name={status(child)!.name}
+                      color={status(child)!.color}
+                      stateType={status(child)!.stateType}
+                    />
+                  </>
+                )}
               </div>
             ))}
         </div>
@@ -86,7 +97,17 @@ export function IssueRelationships({
               >
                 {label} {target ? `${target.identifier} ${target.title}` : link.id}
               </button>
-              {status(target) && <span> · {status(target)}</span>}
+              {status(target) && (
+                <>
+                  {' '}
+                  ·{' '}
+                  <IssueStatusBadge
+                    name={status(target)!.name}
+                    color={status(target)!.color}
+                    stateType={status(target)!.stateType}
+                  />
+                </>
+              )}
             </div>
           )
         })}

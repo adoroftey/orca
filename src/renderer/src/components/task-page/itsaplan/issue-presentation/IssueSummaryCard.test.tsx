@@ -12,10 +12,11 @@ it('separates title, description, status, label and each child status', () => {
   const metadata: ItsaplanProjectDetails = {
     project: { id: 1, key: 'P', ref: 'p', name: 'P' },
     assignees: [{ userId: 'a', name: 'Worker', kind: 'agent' }],
-    labels: [{ id: 5, name: 'Urgent' }],
+    labels: [{ id: 5, name: 'Urgent', color: '#ef4444' }],
+    issueTypes: [{ id: 7, name: 'Epic', color: '#8b5cf6' }],
     columns: [
-      { id: 1, name: 'Doing', stateType: 'started', color: '', position: 0 },
-      { id: 2, name: 'Done', stateType: 'completed', color: '', position: 1 }
+      { id: 1, name: 'Doing', stateType: 'started', color: '#3b82f6', position: 0 },
+      { id: 2, name: 'Done', stateType: 'completed', color: '#22c55e', position: 1 }
     ]
   }
   const issue = {
@@ -27,7 +28,8 @@ it('separates title, description, status, label and each child status', () => {
     columnId: 1,
     assigneeUserId: 'a',
     priority: 'High',
-    labelIds: [5]
+    labelIds: [5],
+    typeId: 7
   }
   const child = { ...issue, id: 2, identifier: 'P-2', title: 'Child', parentId: 1, columnId: 2 }
   const { container } = render(
@@ -41,8 +43,11 @@ it('separates title, description, status, label and each child status', () => {
   expect(screen.getByText('Parent')).toBeInTheDocument()
   expect(screen.getByText('<script>text</script>')).toBeInTheDocument()
   expect(container.querySelector('script')).toBeNull()
-  expect(screen.getByText('Urgent')).toBeInTheDocument()
-  expect(screen.getByText(/Done/)).toBeInTheDocument()
+  expect(screen.getByText('Urgent').querySelector('[aria-hidden="true"]')).toBeInTheDocument()
+  expect(screen.getByText('Epic').querySelector('[aria-hidden="true"]')).toBeInTheDocument()
+  expect(screen.getByText('Doing').querySelector('[aria-hidden="true"]')).toBeInTheDocument()
+  expect(screen.getByText('Doing')).toHaveStyle({ borderColor: '#3b82f6' })
+  expect(screen.getByText('Done')).toHaveStyle({ borderColor: '#22c55e' })
   expect(screen.getByText(/Agent/)).toBeInTheDocument()
 })
 it('shows real archive state and one labeled relative updated time', () => {
@@ -81,4 +86,25 @@ it('shows real archive state and one labeled relative updated time', () => {
   expect(screen.queryByText(/Updated/)).not.toBeInTheDocument()
   expect(container.querySelector('time')).toBeNull()
   error.mockRestore()
+})
+
+it('shows an unknown status using a neutral status badge', () => {
+  const item = {
+    id: 4,
+    sequenceNumber: 4,
+    identifier: 'P-4',
+    title: 'Unknown status',
+    columnId: 99,
+    assigneeUserId: null,
+    priority: null
+  }
+  render(<IssueSummaryCard issue={item} metadata={null} onOpenIssue={vi.fn()} />)
+  const badge = screen.getAllByText('—').find((element) => element.dataset.slot === 'badge')
+  expect(badge).toBeDefined()
+  if (!badge) {
+    throw new Error('Missing status badge')
+  }
+  expect(badge.style.borderColor).toBe('var(--muted-foreground)')
+  expect(badge.style.color).toBe('')
+  expect(badge.querySelector('[aria-hidden="true"]')).toBeInTheDocument()
 })

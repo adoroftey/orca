@@ -7,6 +7,8 @@ import type {
   ItsaplanIssueSummary,
   ItsaplanProjectDetails
 } from '../../../../../../shared/itsaplan/types'
+import { IssueStatusMark } from './IssueStatusMark'
+import { issueStatusColor } from './issue-status-color'
 import { IssuePropertyValue } from './IssuePropertyValue'
 import { IssueSummaryCard } from './IssueSummaryCard'
 import {
@@ -46,10 +48,16 @@ export function IssueExecutionMatrix({
         {stages.map((stage) => (
           <div
             key={stage.key}
-            className="border-l border-border p-3 text-sm font-medium"
+            className="border-l border-t-2 p-3 text-sm font-medium"
+            style={{ borderColor: issueStatusColor(stage.color) }}
             role="columnheader"
           >
-            {stage.name} <span className="text-muted-foreground">{stage.count}</span>
+            <span className="inline-flex items-center gap-2">
+              <IssueStatusMark color={stage.color} stateType={stage.stateType} />
+              <span>
+                {stage.name} <span className="text-muted-foreground">{stage.count}</span>
+              </span>
+            </span>
           </div>
         ))}
       </div>
@@ -94,7 +102,8 @@ export function IssueExecutionMatrix({
           {stages.map((stage) => (
             <div
               key={stage.key}
-              className="min-w-0 space-y-2 border-l border-border p-2"
+              className="min-w-0 space-y-2 border-l p-2"
+              style={{ borderColor: issueStatusColor(stage.color) }}
               role="cell"
             >
               {row.issues

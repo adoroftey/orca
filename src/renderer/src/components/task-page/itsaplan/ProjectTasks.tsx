@@ -257,7 +257,12 @@ export function ItsaplanProjectTasks({
             }}
             options={[
               { value: 'all', label: translate('itsaplan.filters.allStatuses', 'All statuses') },
-              ...metadata.columns.map((entry) => ({ value: String(entry.id), label: entry.name }))
+              ...metadata.columns.map((entry) => ({
+                value: String(entry.id),
+                label: entry.name,
+                color: entry.color,
+                stateType: entry.stateType
+              }))
             ]}
             disabled={loading}
           />

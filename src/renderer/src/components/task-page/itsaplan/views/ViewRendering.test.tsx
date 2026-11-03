@@ -92,9 +92,11 @@ it('honors namespaced group visibility and denies a read-only status drop', () =
   )
   expect(screen.queryByText(/Parent/)).not.toBeInTheDocument()
   expect(
-    screen.getByText('Done (0)').parentElement?.parentElement?.firstElementChild
+    screen.getByRole('button', { name: 'Done (0)' }).parentElement?.parentElement?.firstElementChild
   ).toHaveTextContent('Done')
-  const target = screen.getByText('Done (0)').parentElement?.querySelector('div')
+  const target = screen
+    .getByRole('button', { name: 'Done (0)' })
+    .parentElement?.querySelector('div')
   if (target) {
     fireEvent.drop(target, { dataTransfer: { getData: () => '1' } })
   }
@@ -139,8 +141,8 @@ it('restricts empty status groups by status type', () => {
       onOpenIssue={vi.fn()}
     />
   )
-  expect(screen.getByText('Todo (0)')).toBeInTheDocument()
-  expect(screen.queryByText('Done (0)')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Todo (0)' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Done (0)' })).not.toBeInTheDocument()
 })
 
 it('restricts custom member group choices by scope and filter', () => {
@@ -271,4 +273,40 @@ it.each(['card', 'table'])('saved %s shows links only when explicitly enabled', 
   expect(screen.queryByText(/Blocks P-2 Dependency/)).not.toBeInTheDocument()
   rerender(renderView(true))
   expect(screen.getByText(/Blocks P-2 Dependency/)).toBeInTheDocument()
+})
+
+it('uses status metadata for group and subgroup badges while preserving counts and collapse', () => {
+  const colored = {
+    ...metadata,
+    columns: metadata.columns.map((c) => ({ ...c, color: c.id === 1 ? '#123456' : '#abcdef' }))
+  }
+  const { rerender } = render(
+    <ViewTable
+      issues={[issue]}
+      metadata={colored}
+      display={{ group: 'status' }}
+      onOpenIssue={vi.fn()}
+    />
+  )
+  const group = screen.getByRole('button', { name: 'Todo (1)' })
+  expect(group.closest('section')).toHaveStyle({ borderColor: '#123456' })
+  expect(group.querySelector('[data-slot="badge"]')).toHaveStyle({ borderColor: '#123456' })
+  fireEvent.keyDown(group, { key: 'Enter' })
+  expect(group).toHaveAttribute('aria-expanded', 'false')
+  rerender(
+    <ViewTable
+      issues={[issue]}
+      metadata={colored}
+      display={{ group: 'priority', subgroup: 'status' }}
+      onOpenIssue={vi.fn()}
+    />
+  )
+  expect(
+    screen
+      .getAllByText('Todo')
+      .find((element) => element.closest('h4'))
+      ?.closest('[data-slot="badge"]')
+  ).toHaveStyle({
+    borderColor: '#123456'
+  })
 })

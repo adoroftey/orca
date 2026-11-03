@@ -1,3 +1,5 @@
+import { IssueStatusBadge } from '../issue-presentation/IssueStatusBadge'
+import { issueStatusColor } from '../issue-presentation/issue-status-color'
 import { EMPTY_ISSUES } from './view-guards'
 import { useState } from 'react'
 import { translate } from '@/i18n/i18n'
@@ -127,6 +129,12 @@ export function ViewGroups(
         <GroupSection
           key={g.key}
           label={g.label}
+          isStatus={group === 'status'}
+          status={
+            group === 'status'
+              ? props.metadata.columns.find((column) => String(column.id) === g.key)
+              : undefined
+          }
           isKanban={isKanban}
           count={g.issues.length}
           initialCollapsed={
@@ -138,7 +146,19 @@ export function ViewGroups(
             ? props.render(g.issues, g.key)
             : groupPlanningIssues(g.issues, subgroup, props.metadata).map((s) => (
                 <div key={s.key}>
-                  <h4>{s.label}</h4>
+                  <h4>
+                    {subgroup === 'status' ? (
+                      <StatusLabel
+                        isStatus
+                        label={s.label}
+                        status={props.metadata.columns.find(
+                          (column) => String(column.id) === s.key
+                        )}
+                      />
+                    ) : (
+                      s.label
+                    )}
+                  </h4>
                   {props.render(s.issues, g.key)}
                 </div>
               ))}
@@ -153,12 +173,16 @@ export function ViewGroups(
 
 function GroupSection({
   label,
+  status,
+  isStatus,
   isKanban,
   count,
   initialCollapsed,
   children
 }: {
   label: string
+  status?: ItsaplanProjectDetails['columns'][number]
+  isStatus: boolean
   isKanban: boolean
   count: number
   initialCollapsed: boolean
@@ -167,6 +191,7 @@ function GroupSection({
   const [collapsed, setCollapsed] = useState(initialCollapsed)
   return (
     <section
+      style={isStatus ? { borderColor: issueStatusColor(status?.color) } : undefined}
       className={
         isKanban
           ? 'min-w-48 flex-1 space-y-2 rounded-md border bg-muted/30 p-2'
@@ -185,9 +210,25 @@ function GroupSection({
           }
         }}
       >
-        {label} ({count})
+        <StatusLabel label={label} status={status} isStatus={isStatus} /> ({count})
       </h3>
       {!collapsed && children}
     </section>
+  )
+}
+
+function StatusLabel({
+  label,
+  status,
+  isStatus
+}: {
+  label: string
+  isStatus: boolean
+  status?: ItsaplanProjectDetails['columns'][number]
+}) {
+  return isStatus ? (
+    <IssueStatusBadge name={label} color={status?.color} stateType={status?.stateType} />
+  ) : (
+    label
   )
 }

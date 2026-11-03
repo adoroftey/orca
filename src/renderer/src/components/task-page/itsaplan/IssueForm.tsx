@@ -97,7 +97,9 @@ export function ItsaplanIssueForm({
           onChange={setColumnId}
           options={metadata.columns.map((column) => ({
             value: String(column.id),
-            label: column.name
+            label: column.name,
+            color: column.color,
+            stateType: column.stateType
           }))}
           disabled={busy}
         />

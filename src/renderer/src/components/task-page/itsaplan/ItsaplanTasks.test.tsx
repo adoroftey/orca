@@ -40,7 +40,7 @@ function apiFixture() {
     getProject: vi.fn().mockImplementation((ref) =>
       Promise.resolve({
         project: projects.find((project) => project.ref === ref) ?? projects[0],
-        columns: [{ id: 1, name: 'To do', stateType: 'unstarted', color: '', position: 0 }],
+        columns: [{ id: 1, name: 'To do', stateType: 'unstarted', color: '#123456', position: 0 }],
         assignees: [{ userId: 'user-1', name: 'Alex', kind: 'member' }]
       })
     ),
@@ -100,7 +100,12 @@ it('loads full issue context before editing, commenting and starting a workspace
   render(<ItsaplanTasks api={api} hostKey="local" onUseIssue={onUseIssue} />)
   fireEvent.click(await screen.findByRole('button', { name: 'APP-3 Fix checkout' }))
   await screen.findByText('Full task context')
+  const detailsStatus = screen.getAllByText('To do').find((element) => element.closest('p'))
+  expect(detailsStatus?.closest('[data-slot="badge"]')).toHaveStyle({ borderColor: '#123456' })
   fireEvent.click(screen.getByRole('button', { name: 'Edit issue' }))
+  const statusSelect = screen.getByRole('combobox', { name: 'Status' })
+  expect(statusSelect).toHaveTextContent('To do')
+  expect(statusSelect.querySelector('[data-slot="badge"]')).toHaveStyle({ borderColor: '#123456' })
   fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Fixed checkout' } })
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
   await waitFor(() =>
@@ -268,7 +273,7 @@ it('keeps read-only issue access without offering denied edits or comments', asy
   const api = apiFixture()
   api.getProject.mockResolvedValue({
     project: projects[0],
-    columns: [{ id: 1, name: 'To do', stateType: 'unstarted', color: '', position: 0 }],
+    columns: [{ id: 1, name: 'To do', stateType: 'unstarted', color: '#123456', position: 0 }],
     assignees: [],
     permissions: { work_items: { create: false, edit: false } }
   })

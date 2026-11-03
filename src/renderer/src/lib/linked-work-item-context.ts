@@ -157,6 +157,10 @@ export function getLaunchableWorkItemDraftContent(args: {
   if (args.pasteContent?.trim()) {
     return args.pasteContent
   }
+  if (args.provider === 'itsaplan') {
+    const block = buildContainedLinkedContextBlock(args.linkedContext)
+    return block ? formatDraftContextBlock(block) : args.url
+  }
   if (isLinearWorkItemReference(args)) {
     const linearBlock = buildLinearLaunchContextBlock({
       provider: args.provider,
@@ -186,6 +190,11 @@ export function resolveQuickCreateLinkedWorkItemPrompt(
   note: string
 ): { prompt: string; draftPrompt: string | null } {
   const trimmedNote = note.trim()
+  if (linkedWorkItem?.provider === 'itsaplan') {
+    const block =
+      buildContainedLinkedContextBlock(linkedWorkItem.linkedContext) ?? linkedWorkItem.url.trim()
+    return { prompt: '', draftPrompt: [trimmedNote, block].filter(Boolean).join('\n\n') || null }
+  }
   const linearBlock = isLinearWorkItemReference(linkedWorkItem)
     ? buildLinearLaunchContextBlock({
         provider: linkedWorkItem?.provider,

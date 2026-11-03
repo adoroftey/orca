@@ -5,7 +5,8 @@ import {
   GitBranch,
   GitBranchPlus,
   GitMerge,
-  GitPullRequest
+  GitPullRequest,
+  ListTodo
 } from 'lucide-react'
 import { LinearIcon } from '@/components/icons/LinearIcon'
 import { JiraIcon } from '@/components/icons/JiraIcon'
@@ -60,6 +61,9 @@ export function SelectionIcon({
   }
   if (kind === 'branch') {
     return <GitBranch className="size-3.5 shrink-0 text-muted-foreground" />
+  }
+  if (kind === 'itsaplan') {
+    return <ListTodo className="size-3.5 shrink-0 text-muted-foreground" />
   }
   if (kind === 'jira') {
     return <JiraIcon className="size-3.5 shrink-0 text-muted-foreground" />

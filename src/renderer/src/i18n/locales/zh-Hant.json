@@ -8968,7 +8968,6 @@
           "incompleteBannerTitle": "部分可見供應商仍需設定",
           "incompleteBannerBody": "隱藏不使用的供應商，或展開卡片並完成其中的步驟。",
           "providersDescription": "每張卡片都會引導你完成連線、任務顯示設定；Linear 還包括技能設定。",
-          "integrationsHint": "所有供應商的憑證也可在此管理：",
           "integrationsLink": "整合",
           "skillHint": "。連線 Linear 後，可在設定 → Linear 中檢視使用示例。",
           "incompleteBannerBodyWithLinear": "隱藏不使用的供應商，或展開卡片並完成其中的步驟。Linear 需要 API 存取權限、代理程式技能以及在任務中顯示。"

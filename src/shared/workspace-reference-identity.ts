@@ -78,6 +78,10 @@ function parseReferenceRoute(
   url: URL,
   providerHint?: WorkspaceAttachment['provider']
 ): WorkspaceAttachment {
+  const itsaplan = providerHint === 'itsaplan' && /^(.*\/issue)\/(\d+)$/.exec(url.pathname)
+  if (itsaplan) {
+    return numberedReference(url, 'itsaplan', 'issue', itsaplan[1], itsaplan[2])
+  }
   const linear = parseLinearIssueUrlIntent(url.href)
   if (linear) {
     url.pathname = `/${linear.organizationUrlKey.toLowerCase()}/issue/${linear.identifier}`
@@ -189,6 +193,7 @@ function externalUrl(item: WorkspaceAttachment): string | undefined {
         ? `${identity.siteUrl.replace(/\/+$/, '')}/browse/${identifier}`
         : undefined
     case 'linear':
+    case 'itsaplan':
       return undefined
   }
 }

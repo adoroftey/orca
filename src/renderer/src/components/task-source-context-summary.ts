@@ -225,6 +225,8 @@ function getProviderIdentityLabel(
       return identity.workspaceName ?? identity.workspaceId ?? null
     case 'jira':
       return identity.siteUrl ?? identity.siteId ?? null
+    case 'itsaplan':
+      return [identity.baseUrl, identity.projectRef].filter(Boolean).join(' · ') || null
   }
 }
 

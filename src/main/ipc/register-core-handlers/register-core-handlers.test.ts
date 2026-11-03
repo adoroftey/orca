@@ -51,6 +51,7 @@ const {
   registerAppHandlersMock,
   registerLinearHandlersMock,
   registerJiraHandlersMock,
+  registerItsaplanHandlersMock,
   registerJiraIssueSummaryGenerationHandlersMock,
   registerBitbucketHandlersMock,
   registerGitLabHandlersMock,
@@ -123,6 +124,7 @@ const {
   registerAppHandlersMock: vi.fn(),
   registerLinearHandlersMock: vi.fn(),
   registerJiraHandlersMock: vi.fn(),
+  registerItsaplanHandlersMock: vi.fn(),
   registerJiraIssueSummaryGenerationHandlersMock: vi.fn(),
   registerBitbucketHandlersMock: vi.fn(),
   registerGitLabHandlersMock: vi.fn(),
@@ -428,6 +430,10 @@ vi.mock('../jira/register-handlers', () => ({
   registerJiraHandlers: registerJiraHandlersMock
 }))
 
+vi.mock('../itsaplan/register-handlers', () => ({
+  registerItsaplanHandlers: registerItsaplanHandlersMock
+}))
+
 vi.mock('../jira/issue-summary-generation', () => ({
   registerJiraIssueSummaryGenerationHandlers: registerJiraIssueSummaryGenerationHandlersMock
 }))
@@ -514,6 +520,7 @@ describe('registerCoreHandlers', () => {
     registerAppHandlersMock.mockReset()
     registerLinearHandlersMock.mockReset()
     registerJiraHandlersMock.mockReset()
+    registerItsaplanHandlersMock.mockReset()
     registerJiraIssueSummaryGenerationHandlersMock.mockReset()
     registerBitbucketHandlersMock.mockReset()
     registerGitLabHandlersMock.mockReset()
@@ -575,6 +582,7 @@ describe('registerCoreHandlers', () => {
       { getAdditionalAiVaultCodexHomePaths, onBeforeRelaunch }
     )
 
+    expect(registerItsaplanHandlersMock).toHaveBeenCalledExactlyOnceWith()
     const aiVaultOptions = registerAiVaultHandlersMock.mock.calls[0]?.[0]
     expect(aiVaultOptions).toBeDefined()
     // Registration happens once per module: later tests reach these handlers through here.

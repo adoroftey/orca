@@ -6560,7 +6560,6 @@
           "incompleteBannerTitle": "Alguns provedores visíveis ainda precisam de configuração",
           "incompleteBannerBody": "Oculte provedores que você não usa, ou expanda um cartão e conclua suas etapas.",
           "providersDescription": "Cada cartão guia pela conexão (e pela skill, no caso do Linear) e se ele aparece em Tarefas.",
-          "integrationsHint": "As credenciais de todos os provedores também estão em",
           "integrationsLink": "Integrações",
           "skillHint": ". Depois que o Linear estiver conectado, os exemplos de uso permanecem em Configurações → Linear.",
           "incompleteBannerBodyWithLinear": "Oculte provedores que você não usa, ou expanda um cartão e conclua suas etapas. Para o Linear: acesso à API, a skill de agente e Mostrar em Tarefas."

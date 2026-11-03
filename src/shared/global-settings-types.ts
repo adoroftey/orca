@@ -21,12 +21,7 @@ import type { AgentChatPermissionMode } from './agent-chat-permission-mode'
 import type { ComputerAwakeMode } from './computer-awake-mode'
 import type { CommitMessageAiSettings } from './commit-message-ai-types'
 import type { HostSettingOverrides } from './host-setting-overrides'
-import type {
-  ClaudeManagedAccount,
-  ClaudeManagedAccountRuntimeSelection,
-  CodexManagedAccount,
-  CodexManagedAccountRuntimeSelection
-} from './managed-account-types'
+import type * as ManagedAccounts from './managed-account-types'
 import type { NotificationSettings } from './notification-settings-types'
 import type { CtrlTabOrderMode } from './tab-types'
 import type { TerminalQuickCommand } from './terminal-quick-command-types'
@@ -304,13 +299,13 @@ export type GlobalSettings = GlobalSettingsBase & {
   /** Prompt-cache TTL (ms); only 300000 (5 min standard) or 3600000 (1 hr, extended-TTL plans). */
   promptCacheTtlMs: number
   /** Why: durable main-owned pref so Orca can prepare shared ~/.codex before the renderer hydrates. */
-  codexManagedAccounts: CodexManagedAccount[]
+  codexManagedAccounts: ManagedAccounts.CodexManagedAccount[]
   activeCodexManagedAccountId: string | null
-  activeCodexManagedAccountIdsByRuntime?: CodexManagedAccountRuntimeSelection
+  activeCodexManagedAccountIdsByRuntime?: ManagedAccounts.CodexManagedAccountRuntimeSelection
   /** Why: persist only per-account auth (not a CLAUDE_CONFIG_DIR swap) so switching accounts doesn't fork Claude's shared chat/session context. */
-  claudeManagedAccounts: ClaudeManagedAccount[]
+  claudeManagedAccounts: ManagedAccounts.ClaudeManagedAccount[]
   activeClaudeManagedAccountId: string | null
-  activeClaudeManagedAccountIdsByRuntime?: ClaudeManagedAccountRuntimeSelection
+  activeClaudeManagedAccountIdsByRuntime?: ManagedAccounts.ClaudeManagedAccountRuntimeSelection
   /** Dismissed the "System default may hold a copied login" notice in Settings > Accounts. */
   claudeCopiedSystemDefaultNoticeDismissed?: boolean
   /** Scope bash/zsh HISTFILE and fish_history by worktree so ArrowUp does not expose other worktrees’ commands; default true. */
@@ -355,6 +350,8 @@ export type GlobalSettings = GlobalSettingsBase & {
   visibleTaskProviders: TaskProvider[]
   /** Why: one-shot guard to make Jira visible for existing profiles once, without re-adding after a later opt-out. */
   visibleTaskProvidersDefaultedForJira: boolean
+  /** One-shot rollout so a later intentional Itsaplan opt-out survives reload. */
+  visibleTaskProvidersDefaultedForItsaplan: boolean
   /** Repo selection: null includes all present/future repos; arrays freeze a subset, dropping ineligible ids on load and treating empty as null. */
   defaultRepoSelection: string[] | null
   /** Linear team selection: null includes all; arrays freeze selected team IDs, matching defaultRepoSelection. */

@@ -2,7 +2,10 @@ import type { TaskPageLinearCreationStateModel } from './linear/use-task-page-li
 import { useMemo } from 'react'
 import type { GitHubTaskKind } from '../../../../shared/task-github-search'
 import { buildGitHubRepoUrl } from '../../../../shared/github/links'
-import { getTaskSourceContextSummary } from '../task-source-context-summary'
+import {
+  getAccountBackedTaskSourceSummary,
+  getTaskSourceContextSummary
+} from '../task-source-context-summary'
 import { getGitHubProjectSourceSummary } from './task-page-source-context'
 
 type TaskPageSourceDisplayInput = TaskPageLinearCreationStateModel & {
@@ -49,6 +52,14 @@ export function useTaskPageSourceDisplay<Model extends TaskPageSourceDisplayInpu
         hostId: accountBackedTaskSourceHostId,
         host: hostRegistryById.get(accountBackedTaskSourceHostId),
         hostLabelById
+      })
+    }
+    if (taskSource === 'itsaplan') {
+      return getAccountBackedTaskSourceSummary(providerLabel, {
+        accountLabel: null,
+        accountHostId: accountBackedTaskSourceHostId,
+        hostLabelById,
+        hostAvailability: accountBackedTaskSourceHostAvailability
       })
     }
     if (taskSource === 'linear' || taskSource === 'jira') {

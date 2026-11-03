@@ -30,7 +30,7 @@ function clientWithResponse(body: unknown, status = 200) {
 }
 
 describe('Itsaplan REST client', () => {
-  it('reads projects from the configured API subpath with bearer authentication and no redirects', async () => {
+  it('reads projects from the configured API subpath with its REST API key header and no redirects', async () => {
     const projects = [{ id: 7, key: 'API', ref: 'engineering.API', name: 'API' }]
     const { client, fetchMock } = clientWithResponse(projects)
 
@@ -38,7 +38,8 @@ describe('Itsaplan REST client', () => {
 
     const [input, init] = fetchMock.mock.calls[0]
     expect(String(input)).toBe('https://api.plan.example/planner/projects')
-    expect(new Headers(init?.headers).get('Authorization')).toBe(`Bearer ${apiKey}`)
+    expect(new Headers(init?.headers).get('x-api-key')).toBe(apiKey)
+    expect(new Headers(init?.headers).get('Authorization')).toBeNull()
     expect(new Headers(init?.headers).get('Accept')).toBe('application/json')
     expect(init?.redirect).toBe('error')
   })
@@ -213,7 +214,10 @@ describe('Itsaplan REST client', () => {
     const error: unknown = await client.listProjects().catch((error: unknown) => error)
 
     expect(error).toBeInstanceOf(Error)
-    expect((error as Error).message).not.toContain(apiKey)
+    if (!(error instanceof Error)) {
+      throw new Error('Expected an Itsaplan request error.')
+    }
+    expect(error.message).not.toContain(apiKey)
   })
 
   it('does not expose transport errors containing the API key', async () => {
@@ -229,6 +233,9 @@ describe('Itsaplan REST client', () => {
     const error: unknown = await client.listProjects().catch((error: unknown) => error)
 
     expect(error).toBeInstanceOf(Error)
-    expect((error as Error).message).not.toContain(apiKey)
+    if (!(error instanceof Error)) {
+      throw new Error('Expected an Itsaplan request error.')
+    }
+    expect(error.message).not.toContain(apiKey)
   })
 })

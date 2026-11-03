@@ -9339,7 +9339,6 @@
           "incompleteBannerTitle": "Some visible providers still need setup",
           "incompleteBannerBody": "Hide providers you do not use, or expand a card and finish its steps.",
           "providersDescription": "Each card walks through connection (and skill, for Linear) plus whether it appears in Tasks.",
-          "integrationsHint": "Credentials for all providers also live under",
           "integrationsLink": "Integrations",
           "skillHint": ". After Linear is connected, usage examples stay under Settings → Linear.",
           "incompleteBannerBodyWithLinear": "Hide providers you do not use, or expand a card and finish its steps. For Linear: API access, the agent skill, and Show in Tasks."
@@ -23646,6 +23645,105 @@
       "cancel": "Cancel",
       "message": "{{plugin}} wants to open {{host}}",
       "alwaysAllow": "Always allow {{host}} for this plugin"
+    }
+  },
+  "itsaplan": {
+    "settings": {
+      "description": "Connect your self-hosted task tracker and start workspaces from issues.",
+      "openTasks": "Open It's a Plan in Tasks",
+      "otherCredentials": "Manage other provider credentials under"
+    },
+    "connect": {
+      "title": "Connect It's a Plan",
+      "apiUrl": "API URL",
+      "webUrl": "Web URL (optional)",
+      "apiKey": "API key",
+      "connecting": "Connecting…",
+      "connect": "Connect"
+    },
+    "cancel": "Cancel",
+    "workspace": {
+      "noSource": "The task source is unavailable.",
+      "openFailed": "Unable to open the linked workspace.",
+      "noTarget": "The selected workspace is unavailable.",
+      "attachFailed": "Unable to attach this issue.",
+      "open": "Open workspace",
+      "create": "Create workspace",
+      "attach": "Attach to workspace",
+      "choose": "Workspace",
+      "attachIssue": "Attach issue"
+    },
+    "issue": {
+      "details": "Issue details",
+      "back": "Back to issues",
+      "openExternal": "Open in It's a Plan",
+      "edit": "Edit issue",
+      "loading": "Loading issue…",
+      "noDescription": "No description.",
+      "title": "Title",
+      "description": "Description",
+      "status": "Status",
+      "priority": "Priority",
+      "assignee": "Assignee",
+      "saving": "Saving…",
+      "save": "Save changes",
+      "create": "Create issue",
+      "archived": "Archived",
+      "new": "New issue"
+    },
+    "retry": "Retry",
+    "priority": {
+      "none": "No priority",
+      "urgent": "Urgent",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "assignee": {
+      "none": "Unassigned"
+    },
+    "comments": {
+      "title": "Comments",
+      "empty": "No comments yet.",
+      "unknown": "Unknown author",
+      "reply": "Reply to comment",
+      "more": "Load more comments",
+      "comment": "Comment",
+      "add": "Add comment"
+    },
+    "search": {
+      "capped": "Showing up to 500 search matches. Refine your search to find other issues.",
+      "label": "Search issues",
+      "placeholder": "Search title, description, or fields",
+      "submit": "Search",
+      "clear": "Clear search"
+    },
+    "issues": {
+      "empty": "No issues match these filters.",
+      "loading": "Loading issues…"
+    },
+    "connection": {
+      "loading": "Loading It's a Plan…",
+      "settings": "Connection settings",
+      "disconnect": "Disconnect"
+    },
+    "project": {
+      "label": "Project",
+      "loading": "Loading projects…",
+      "empty": "No accessible projects. Check this API key’s project access."
+    },
+    "refresh": "Refresh",
+    "filters": {
+      "status": "Filter by status",
+      "allStatuses": "All statuses",
+      "assignee": "Filter by assignee",
+      "allAssignees": "All assignees"
+    },
+    "error": {
+      "request": "The It's a Plan request failed."
+    },
+    "provider": {
+      "name": "It's a Plan"
     }
   }
 }

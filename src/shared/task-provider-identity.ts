@@ -1,3 +1,4 @@
+import { normalizeItsaplanBaseUrl } from './itsaplan-source-identity'
 import { githubRepoIdentityKey } from './github/repository-identity-key'
 import type { TaskProvider } from './task-providers'
 import type { ProjectProviderIdentity } from './project-types'
@@ -29,11 +30,18 @@ export type JiraTaskProviderIdentity = {
   projectKey?: string | null
 }
 
+export type ItsaplanTaskProviderIdentity = {
+  provider: 'itsaplan'
+  baseUrl?: string | null
+  projectRef?: string | null
+}
+
 export type TaskProviderIdentity =
   | GitHubTaskProviderIdentity
   | GitLabTaskProviderIdentity
   | LinearTaskProviderIdentity
   | JiraTaskProviderIdentity
+  | ItsaplanTaskProviderIdentity
 
 export function normalizeTaskProviderIdentity(
   provider: TaskProvider,
@@ -71,6 +79,12 @@ export function normalizeTaskProviderIdentity(
         workspaceName: normalizeNonEmptyString(raw.workspaceName),
         teamId: normalizeNonEmptyString(raw.teamId),
         teamKey: normalizeNonEmptyString(raw.teamKey)
+      }
+    case 'itsaplan':
+      return {
+        provider,
+        baseUrl: normalizeItsaplanBaseUrl(raw.baseUrl),
+        projectRef: normalizeNonEmptyString(raw.projectRef)
       }
     case 'jira':
       return {
@@ -110,6 +124,11 @@ export function isStoredTaskProviderIdentity(provider: TaskProvider, identity: u
       return ['workspaceId', 'workspaceName', 'teamId', 'teamKey'].every((key) =>
         isNullableOptionalString(raw[key])
       )
+    case 'itsaplan':
+      return (
+        ['baseUrl', 'projectRef'].every((key) => isNullableOptionalString(raw[key])) &&
+        (!raw.baseUrl || normalizeItsaplanBaseUrl(raw.baseUrl) !== null)
+      )
     case 'jira':
       return ['siteId', 'siteUrl', 'projectKey'].every((key) => isNullableOptionalString(raw[key]))
   }
@@ -119,7 +138,8 @@ const TASK_PROVIDER_IDENTITY_FIELDS: Record<TaskProvider, readonly string[]> = {
   github: ['owner', 'repo', 'host'],
   gitlab: ['projectId', 'namespace', 'project', 'webUrl'],
   linear: ['workspaceId', 'workspaceName', 'teamId', 'teamKey'],
-  jira: ['siteId', 'siteUrl', 'projectKey']
+  jira: ['siteId', 'siteUrl', 'projectKey'],
+  itsaplan: ['baseUrl', 'projectRef']
 }
 
 export function areTaskProviderIdentitiesEqual(
@@ -155,6 +175,11 @@ export function taskProviderIdentityCachePart(
       return identity.projectId ?? [identity.namespace, identity.project].filter(Boolean).join('/')
     case 'linear':
       return [identity.workspaceId, identity.teamId ?? identity.teamKey].filter(Boolean).join('/')
+    case 'itsaplan':
+      return JSON.stringify([
+        normalizeItsaplanBaseUrl(identity.baseUrl),
+        identity.projectRef ?? null
+      ])
     case 'jira':
       return [identity.siteId ?? identity.siteUrl, identity.projectKey].filter(Boolean).join('/')
   }

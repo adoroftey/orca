@@ -370,6 +370,17 @@ import {
   HostedReviewCreationEligibility,
   HostedReviewForBranch
 } from './hosted-review-params'
+import {
+  ItsaplanAddCommentParams,
+  ItsaplanCommentsParams,
+  ItsaplanConnectParams,
+  ItsaplanCreateParams,
+  ItsaplanIssueParams,
+  ItsaplanProjectParams,
+  ItsaplanScopeParams,
+  ItsaplanSearchParams,
+  ItsaplanUpdateParams
+} from './itsaplan-params'
 import { JiraFavouriteFilterParams } from './jira-favourite-filter-params'
 import {
   AssignableUsers,
@@ -1167,6 +1178,18 @@ export const RPC_PARAMS_BY_METHOD = {
   'hostedReview.createStacked': HostedReviewCreate,
   'hostedReview.forBranch': HostedReviewForBranch,
   'hostedReview.getCreationEligibility': HostedReviewCreationEligibility,
+  'itsaplan.addComment': ItsaplanAddCommentParams,
+  'itsaplan.connect': ItsaplanConnectParams,
+  'itsaplan.createIssue': ItsaplanCreateParams,
+  'itsaplan.disconnect': ItsaplanScopeParams,
+  'itsaplan.getIssue': ItsaplanIssueParams,
+  'itsaplan.getProject': ItsaplanProjectParams,
+  'itsaplan.listComments': ItsaplanCommentsParams,
+  'itsaplan.listIssues': ItsaplanProjectParams,
+  'itsaplan.listProjects': ItsaplanScopeParams,
+  'itsaplan.searchIssues': ItsaplanSearchParams,
+  'itsaplan.status': null,
+  'itsaplan.updateIssue': ItsaplanUpdateParams,
   'jira.addIssueComment': IssueCommentOfJiraParams,
   'jira.attachmentImage': AttachmentImage,
   'jira.cancelGenerateIssueSummary': CancelGenerateIssueSummary,

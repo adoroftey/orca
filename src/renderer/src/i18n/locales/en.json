@@ -24029,8 +24029,28 @@
         "yes": "Yes",
         "no": "No",
         "conflict": "Conflict: this view changed. Reload or discard your changes.",
-        "allIssues": "All issues"
+        "allIssues": "All issues",
+        "updated": "Updated"
       }
+    },
+    "presentation": {
+      "statusChanged": "Changed status",
+      "agent": "Agent",
+      "parent": "Parent",
+      "canceled": "canceled",
+      "blocks": "Blocks",
+      "blockedBy": "Blocked by",
+      "related": "Related",
+      "duplicates": "Duplicates",
+      "stageFilters": "Stage filters",
+      "all": "All",
+      "blocked": "Blocked",
+      "board": "Board",
+      "list": "List",
+      "noIssues": "No issues in this selection.",
+      "unknownStage": "Unknown stage",
+      "assignee": "Assignee",
+      "delegate": "Delegate"
     }
   }
 }

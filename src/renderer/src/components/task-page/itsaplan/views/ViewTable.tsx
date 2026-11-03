@@ -1,7 +1,8 @@
 import { translate } from '@/i18n/i18n'
 import { EMPTY_ISSUES } from './view-guards'
 import { planningFieldLabel } from './ViewLabels'
-import { IssueRelations } from './ViewPresentation'
+import { IssuePropertyValue } from '../issue-presentation/IssuePropertyValue'
+import { IssueRelationships } from '../issue-presentation/IssueRelationships'
 import { ViewGroups, displayProperties, property, type LayoutProps } from './ViewIssueLayout'
 export function ViewTable(props: LayoutProps) {
   const properties = displayProperties(props.display)
@@ -34,18 +35,27 @@ export function ViewTable(props: LayoutProps) {
                       className="text-left hover:underline"
                       onClick={() => props.onOpenIssue(issue.id)}
                     >
-                      {issue.identifier} {issue.title}
+                      <span className="mr-2 font-mono text-xs text-muted-foreground">
+                        {issue.identifier}
+                      </span>
+                      <span>{issue.title}</span>
                     </button>
-                    <IssueRelations
+                    <IssueRelationships
+                      metadata={props.metadata}
                       issue={issue}
                       allIssues={props.allIssues ?? EMPTY_ISSUES}
-                      display={props.display}
+                      display={{ ...props.display, showLinks: props.display.showLinks === true }}
                       onOpenIssue={props.onOpenIssue}
                     />
                   </td>
                   {properties.map((p) => (
                     <td key={p} className="whitespace-nowrap px-3 py-2 align-top">
-                      {property(issue, p, props.metadata)}
+                      <IssuePropertyValue
+                        issue={issue}
+                        metadata={props.metadata}
+                        field={p}
+                        value={property(issue, p, props.metadata)}
+                      />
                     </td>
                   ))}
                 </tr>

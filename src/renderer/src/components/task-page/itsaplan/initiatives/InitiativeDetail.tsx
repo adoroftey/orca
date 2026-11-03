@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { translate } from '@/i18n/i18n'
 import type { ItsaplanApi, ItsaplanProjectDetails } from '../../../../../../shared/itsaplan/types'
 import type {
@@ -10,6 +11,21 @@ import type {
 } from '../../../../../../shared/itsaplan/planning-types'
 import { InitiativeForm, InitiativeDeleteDialog, initiativeValueLabel } from './InitiativeForm'
 import { InitiativeIssues } from './InitiativeIssues'
+function activityStatus(value: unknown): string | null {
+  if (!value || typeof value !== 'object' || !('value' in value)) {
+    return null
+  }
+  return typeof value.value === 'string' ? value.value : null
+}
+function activityMovement(entry: PlanningActivityItem): string | null {
+  if (entry.action !== 'status' || !entry.payload || typeof entry.payload !== 'object') {
+    return null
+  }
+  const payload = entry.payload
+  const from = 'from' in payload ? activityStatus(payload.from) : null
+  const to = 'to' in payload ? activityStatus(payload.to) : null
+  return from && to ? `${from} → ${to}` : null
+}
 export function InitiativeDetail({
   api,
   planning,
@@ -189,7 +205,7 @@ export function InitiativeDetail({
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              <h2>{item.title}</h2>
+              <h2 className="text-xl font-semibold">{item.title}</h2>
               {metadata.permissions?.initiatives?.edit === true && (
                 <Button onClick={() => setEditing(true)}>
                   {translate('itsaplan.planning.initiatives.edit', 'Edit')}
@@ -207,13 +223,15 @@ export function InitiativeDetail({
             </p>
             <p>
               {translate('itsaplan.planning.initiatives.status', 'Status')}:{' '}
-              {initiativeValueLabel(item.status)} ·{' '}
+              <Badge variant="secondary">{initiativeValueLabel(item.status)}</Badge> ·{' '}
               {translate('itsaplan.planning.initiatives.owner', 'Owner')}:{' '}
               {metadata.assignees.find((a) => a.userId === item.ownerUserId)?.name ??
                 item.ownerUserId ??
                 translate('itsaplan.planning.initiatives.unassigned', 'Unassigned')}{' '}
               · {translate('itsaplan.planning.initiatives.priority', 'Priority')}:{' '}
-              {item.priority ? initiativeValueLabel(item.priority) : '—'}
+              <Badge variant="outline">
+                {item.priority ? initiativeValueLabel(item.priority) : '—'}
+              </Badge>
             </p>
             <p>
               {translate('itsaplan.planning.initiatives.startDate', 'Start date')}:{' '}
@@ -234,6 +252,21 @@ export function InitiativeDetail({
               {item.progress.canceled}) ·{' '}
               {translate('itsaplan.planning.initiatives.health', 'Health')}: {item.health ?? '—'}
             </p>
+            <div
+              className="h-2 overflow-hidden rounded-full bg-muted"
+              role="progressbar"
+              aria-label={translate('itsaplan.planning.initiatives.progress', 'Progress')}
+              aria-valuemin={0}
+              aria-valuemax={item.progress.total}
+              aria-valuenow={item.progress.completed}
+            >
+              <div
+                className="h-full bg-primary"
+                style={{
+                  width: `${item.progress.total ? Math.min(100, (item.progress.completed / item.progress.total) * 100) : 0}%`
+                }}
+              />
+            </div>
             <InitiativeIssues
               api={api}
               planning={planning}
@@ -246,10 +279,13 @@ export function InitiativeDetail({
             <section>
               <h3>{translate('itsaplan.planning.initiatives.activity', 'Activity')}</h3>
               {feed.map((entry) => (
-                <p key={entry.id}>
+                <p key={entry.id} className="border-b py-2 text-sm">
+                  <time className="mr-2 text-muted-foreground" dateTime={entry.createdAt}>
+                    {entry.createdAt}
+                  </time>
                   {entry.actorName ??
                     translate('itsaplan.planning.initiatives.unknownActor', 'Unknown')}{' '}
-                  · {entry.kind} · {entry.body}{' '}
+                  · {entry.action ?? entry.kind} {activityMovement(entry) ?? entry.body}{' '}
                   {entry.issueId && (
                     <Button variant="link" onClick={() => onOpenIssue(entry.issueId!)}>
                       {entry.issueIdentifier ?? entry.issueTitle ?? String(entry.issueId)}

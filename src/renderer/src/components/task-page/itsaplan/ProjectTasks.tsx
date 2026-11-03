@@ -294,6 +294,7 @@ export function ItsaplanProjectTasks({
         ) : (
           <ItsaplanIssueList
             issues={shownIssues}
+            allIssues={issues}
             metadata={metadata}
             searchCapped={Boolean(query) && issues.length >= 500}
             onSelect={setSelectedIssueId}

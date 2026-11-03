@@ -331,3 +331,82 @@ it('queries an unknown saved activity action unchanged', async () => {
     )
   )
 })
+
+it('groups the limited recent issues by stage and shows their labels', () => {
+  const details: ItsaplanProjectDetails = {
+    ...metadata,
+    columns: [{ id: 1, name: 'In progress', stateType: 'started', color: '', position: 1 }],
+    labels: [{ id: 1, name: 'Urgent' }]
+  }
+  const widget = readDashboardWidgets([{ type: 'recent_issues', config: { limit: 1 } }])[0]
+  const issue = {
+    id: 1,
+    sequenceNumber: 1,
+    identifier: 'P-1',
+    title: 'Visible task',
+    columnId: 1,
+    assigneeUserId: null,
+    priority: null,
+    projectId: 1,
+    description: '',
+    labelIds: [1],
+    createdAt: '2026-01-01',
+    updatedAt: '2026-01-02'
+  }
+  render(
+    <ItsaplanDashboardWidget
+      widget={widget}
+      api={makeApi()}
+      planning={makePlanning()}
+      project={project}
+      metadata={details}
+      issues={[
+        issue,
+        { ...issue, id: 2, identifier: 'P-2', title: 'Older task', updatedAt: '2026-01-01' }
+      ]}
+      onOpenIssue={vi.fn()}
+    />
+  )
+  expect(screen.getByRole('heading', { name: /In progress/ })).toBeInTheDocument()
+  expect(screen.getByText('Visible task')).toBeInTheDocument()
+  expect(screen.getByText('Urgent')).toBeInTheDocument()
+  expect(screen.queryByText('Older task')).not.toBeInTheDocument()
+})
+
+it('renders a status movement with actor, stages and timestamp', async () => {
+  const planning = makePlanning({
+    analytics: vi.fn().mockResolvedValue({
+      items: [
+        {
+          id: 1,
+          kind: 'activity',
+          actorName: 'Alex',
+          action: 'status',
+          body: null,
+          payload: { from: { value: 'Review' }, to: { value: 'In Progress' } },
+          createdAt: '2026-01-01T10:00:00Z',
+          issueId: 1,
+          issueIdentifier: 'P-1'
+        }
+      ],
+      nextCursor: null
+    })
+  })
+  const open = vi.fn()
+  render(
+    <ItsaplanDashboardWidget
+      widget={readDashboardWidgets([{ type: 'activity_feed' }])[0]}
+      api={makeApi()}
+      planning={planning}
+      project={project}
+      metadata={metadata}
+      issues={[]}
+      onOpenIssue={open}
+    />
+  )
+  expect(await screen.findByText('Alex')).toBeInTheDocument()
+  expect(screen.getByText(/Review → In Progress/)).toBeInTheDocument()
+  expect(document.querySelector('time')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'P-1' }))
+  expect(open).toHaveBeenCalledWith(1)
+})

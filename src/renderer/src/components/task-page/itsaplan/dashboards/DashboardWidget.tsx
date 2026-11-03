@@ -13,7 +13,8 @@ import type {
 import { applyPlanningFilters } from '../views/view-model'
 import type { PlanningWidget } from './dashboard-model'
 import { Content } from './OperationalWidget'
-import { obj, rows, date } from './SeriesChart'
+import { obj, rows } from './SeriesChart'
+import { DashboardIssueList, DashboardActivity } from './DashboardIssueList'
 import { invalidWidgetConfig, request, widgetLimit } from './widget-query'
 
 type Props = {
@@ -150,16 +151,7 @@ export function ItsaplanDashboardWidget({
       .sort((a, b) => b[field].localeCompare(a[field]))
       .slice(0, widgetLimit(widget.config, 10))
     return sorted.length ? (
-      <ul>
-        {sorted.map((issue) => (
-          <li key={issue.id}>
-            <button className="underline" onClick={() => onOpenIssue(issue.id)}>
-              {issue.identifier} {issue.title}
-            </button>{' '}
-            <time>{date(issue[field], metadata.viewer?.timeZone)}</time>
-          </li>
-        ))}
-      </ul>
+      <DashboardIssueList issues={sorted} metadata={metadata} onOpenIssue={onOpenIssue} />
     ) : (
       <p>{translate('itsaplan.planning.dashboards.empty', 'No data available.')}</p>
     )
@@ -187,13 +179,21 @@ export function ItsaplanDashboardWidget({
   }
   return (
     <>
-      <Content
-        type={widget.type}
-        data={state.data}
-        open={onOpenIssue}
-        config={widget.config}
-        timeZone={metadata.viewer?.timeZone}
-      />
+      {widget.type === 'activity_feed' ? (
+        <DashboardActivity
+          data={state.data}
+          onOpenIssue={onOpenIssue}
+          timeZone={metadata.viewer?.timeZone}
+        />
+      ) : (
+        <Content
+          type={widget.type}
+          data={state.data}
+          open={onOpenIssue}
+          config={widget.config}
+          timeZone={metadata.viewer?.timeZone}
+        />
+      )}
       {widget.type === 'activity_feed' && obj(state.data) && obj(state.data.nextCursor) && (
         <div>
           {page.error && (

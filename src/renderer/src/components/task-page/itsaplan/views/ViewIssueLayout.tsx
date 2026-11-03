@@ -2,8 +2,8 @@ import { EMPTY_ISSUES } from './view-guards'
 import { useState } from 'react'
 import { translate } from '@/i18n/i18n'
 import type { ItsaplanIssue, ItsaplanProjectDetails } from '../../../../../../shared/itsaplan/types'
+import { IssueSummaryCard } from '../issue-presentation/IssueSummaryCard'
 import { planningFieldLabel } from './ViewLabels'
-import { IssueRelations } from './ViewPresentation'
 import { groupOptions, savedGroupKey, groupAllowed } from './ViewLayoutOptions'
 import { groupPlanningIssues, planningIssueProperty } from './view-model'
 export type LayoutProps = {
@@ -56,24 +56,20 @@ export function IssueCard({
 }: LayoutProps & { issue: ItsaplanIssue }) {
   const properties = displayProperties(display)
   return (
-    <div className="rounded border p-2">
-      <button className="text-left hover:underline" onClick={() => onOpenIssue(issue.id)}>
-        {issue.identifier} {issue.title}
-      </button>
-      <IssueRelations
-        issue={issue}
-        allIssues={allIssues}
-        display={display}
-        onOpenIssue={onOpenIssue}
-      />
-      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-        {properties.map((p) => (
-          <span key={p}>
-            {planningFieldLabel(p, metadata)}: {property(issue, p, metadata)}
-          </span>
-        ))}
-      </div>
-    </div>
+    <IssueSummaryCard
+      issue={issue}
+      metadata={metadata}
+      allIssues={allIssues}
+      onOpenIssue={onOpenIssue}
+      properties={properties}
+      propertyLabels={Object.fromEntries(
+        properties.map((field) => [field, planningFieldLabel(field, metadata)])
+      )}
+      propertyValues={Object.fromEntries(
+        properties.map((field) => [field, property(issue, field, metadata)])
+      )}
+      display={{ ...display, showLinks: display.showLinks === true }}
+    />
   )
 }
 export function ViewGroups(
@@ -114,6 +110,14 @@ export function ViewGroups(
     }
   }
   const allowedGroups = groups
+  if (group === 'status') {
+    const order = props.metadata.columns.map((column) => String(column.id))
+    allowedGroups.sort((a, b) => {
+      const ai = order.indexOf(a.key)
+      const bi = order.indexOf(b.key)
+      return (ai === -1 ? order.length : ai) - (bi === -1 ? order.length : bi)
+    })
+  }
   const pinned = props.display.pinnedGroup
   allowedGroups.sort((a, b) => Number(matches([pinned], b.key)) - Number(matches([pinned], a.key)))
   const isKanban = (props.display.layout ?? 'kanban') === 'kanban'
@@ -162,7 +166,13 @@ function GroupSection({
 }) {
   const [collapsed, setCollapsed] = useState(initialCollapsed)
   return (
-    <section className={isKanban ? 'min-w-48 flex-1 space-y-2' : 'min-w-0 w-full space-y-2'}>
+    <section
+      className={
+        isKanban
+          ? 'min-w-48 flex-1 space-y-2 rounded-md border bg-muted/30 p-2'
+          : 'min-w-0 w-full space-y-2 rounded-md border bg-muted/30 p-2'
+      }
+    >
       <h3
         className="font-medium"
         role="button"

@@ -12,6 +12,7 @@ import type {
 } from '../../../../../../shared/itsaplan/planning-types'
 import { ItsaplanIssueForm } from '../IssueForm'
 import { ItsaplanSelect } from '../ItsaplanSelect'
+import { IssueStatusBoard } from '../issue-presentation/IssueStatusBoard'
 export function InitiativeIssues({
   api,
   planning,
@@ -103,8 +104,8 @@ export function InitiativeIssues({
   }, [])
   const linked = (issue: ItsaplanIssue) =>
     issue.initiative?.id === initiativeId || issue.initiativeId === initiativeId
-  const canEdit = metadata.permissions?.issues?.edit === true
-  const canCreate = metadata.permissions?.issues?.create === true
+  const canEdit = metadata.permissions?.work_items?.edit === true
+  const canCreate = metadata.permissions?.work_items?.create === true
   const update = async (id: number, value: number | null) => {
     setBusy(true)
     setError(null)
@@ -133,19 +134,25 @@ export function InitiativeIssues({
         <p>{translate('itsaplan.planning.initiatives.issuesLoading', 'Loading issues…')}</p>
       ) : (
         <>
-          {issues.filter(linked).map((issue) => (
-            <div key={issue.id} className="flex gap-2">
-              <Button variant="link" onClick={() => onOpenIssue(issue.id)}>
-                {issue.identifier} {issue.title}
-              </Button>
-              {canEdit && (
-                <Button variant="ghost" disabled={busy} onClick={() => void update(issue.id, null)}>
-                  {translate('itsaplan.planning.initiatives.unlink', 'Unlink')}
-                </Button>
-              )}
-            </div>
-          ))}
-          {!issues.some(linked) && (
+          {issues.some(linked) ? (
+            <IssueStatusBoard
+              issues={issues.filter(linked)}
+              allIssues={issues}
+              metadata={metadata}
+              onOpenIssue={onOpenIssue}
+              renderActions={(issue) =>
+                canEdit && (
+                  <Button
+                    variant="ghost"
+                    disabled={busy}
+                    onClick={() => void update(issue.id, null)}
+                  >
+                    {translate('itsaplan.planning.initiatives.unlink', 'Unlink')}
+                  </Button>
+                )
+              }
+            />
+          ) : (
             <p>{translate('itsaplan.planning.initiatives.issuesEmpty', 'No linked issues.')}</p>
           )}
           {canEdit && issues.some((issue) => !linked(issue)) && (

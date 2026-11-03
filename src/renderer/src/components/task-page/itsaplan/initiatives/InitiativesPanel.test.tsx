@@ -163,7 +163,10 @@ it('unlinks a linked issue and opens its native issue detail', async () => {
       api={api}
       planning={planning}
       project={project}
-      metadata={{ ...metadata, permissions: { ...metadata.permissions, issues: { edit: true } } }}
+      metadata={{
+        ...metadata,
+        permissions: { ...metadata.permissions, work_items: { edit: true, create: true } }
+      }}
       onOpenIssue={onOpenIssue}
     />
   )
@@ -232,7 +235,10 @@ it('links an existing issue to the selected initiative', async () => {
       api={api}
       planning={planning}
       project={project}
-      metadata={{ ...metadata, permissions: { ...metadata.permissions, issues: { edit: true } } }}
+      metadata={{
+        ...metadata,
+        permissions: { ...metadata.permissions, work_items: { edit: true, create: true } }
+      }}
       onOpenIssue={vi.fn()}
     />
   )
@@ -241,4 +247,63 @@ it('links an existing issue to the selected initiative', async () => {
   fireEvent.click(await screen.findByRole('option', { name: 'P-43 Available' }))
   fireEvent.click(screen.getByRole('button', { name: 'Link issue' }))
   await waitFor(() => expect(api.updateIssue).toHaveBeenCalledWith(43, { initiativeId: 1 }))
+})
+it('respects denied work item permissions', async () => {
+  const issue = { id: 42, identifier: 'P-42', title: 'Linked', initiativeId: 1 }
+  const planning = fixturePlanning({
+    listInitiatives: vi.fn().mockResolvedValue({ items: [item], total: 1, page: 1, pageSize: 20 }),
+    getInitiative: vi.fn().mockResolvedValue(item),
+    initiativeFeed: vi.fn().mockResolvedValue({ items: [], nextCursor: null })
+  })
+  render(
+    <ItsaplanInitiativesPanel
+      api={fixtureApi({ listIssues: vi.fn().mockResolvedValue([issue]) })}
+      planning={planning}
+      project={project}
+      metadata={{
+        ...metadata,
+        permissions: { ...metadata.permissions, work_items: { edit: false, create: false } }
+      }}
+      onOpenIssue={vi.fn()}
+    />
+  )
+  fireEvent.click(await screen.findByRole('button', { name: 'First' }))
+  await screen.findByRole('button', { name: 'P-42 Linked' })
+  expect(screen.queryByRole('button', { name: 'Unlink' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'New issue' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Link issue' })).not.toBeInTheDocument()
+})
+it('shows activity status movement from the feed payload', async () => {
+  const planning = fixturePlanning({
+    listInitiatives: vi.fn().mockResolvedValue({ items: [item], total: 1, page: 1, pageSize: 20 }),
+    getInitiative: vi.fn().mockResolvedValue(item),
+    initiativeFeed: vi.fn().mockResolvedValue({
+      items: [
+        {
+          id: 1,
+          kind: 'activity',
+          actorName: 'Agent',
+          body: null,
+          action: 'status',
+          payload: { from: { value: 'Review' }, to: { value: 'In Progress' } },
+          createdAt: '2026-11-03T12:00:00Z',
+          issueId: 42,
+          issueIdentifier: 'P-42'
+        }
+      ],
+      nextCursor: null
+    })
+  })
+  render(
+    <ItsaplanInitiativesPanel
+      api={fixtureApi({ listIssues: vi.fn().mockResolvedValue([]) })}
+      planning={planning}
+      project={project}
+      metadata={metadata}
+      onOpenIssue={vi.fn()}
+    />
+  )
+  fireEvent.click(await screen.findByRole('button', { name: 'First' }))
+  expect(await screen.findByText(/Review → In Progress/)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'P-42' })).toBeInTheDocument()
 })

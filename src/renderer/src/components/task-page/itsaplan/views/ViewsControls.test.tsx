@@ -5,6 +5,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { ViewEditor } from './ViewEditor'
+import { ViewDisplayEditor } from './ViewDisplayEditor'
 import { PlanningFilterEditor } from './FilterEditor'
 import type {
   ItsaplanProjectDetails,
@@ -233,4 +234,30 @@ it('renders every local day of an actual custom date range', () => {
     />
   )
   expect(screen.getAllByText(/Range issue/)).toHaveLength(3)
+})
+
+it('reflects effective display defaults and preserves unknown settings on edits', () => {
+  const change = vi.fn()
+  const future = { setting: 'preserved' }
+  const { rerender } = render(
+    <ViewDisplayEditor metadata={metadata} value={{ future }} onChange={change} />
+  )
+  expect(screen.getByLabelText('Show empty groups')).toBeChecked()
+  expect(screen.getByLabelText('Show subtasks')).toBeChecked()
+  expect(screen.getByLabelText('Show links')).not.toBeChecked()
+  fireEvent.click(screen.getByLabelText('Show links'))
+  expect(change).toHaveBeenLastCalledWith({ future, showLinks: true })
+  fireEvent.click(screen.getByLabelText('Show subtasks'))
+  expect(change).toHaveBeenLastCalledWith({ future, showSubtasks: false })
+  rerender(
+    <ViewDisplayEditor
+      metadata={metadata}
+      value={{ future, showSubtasks: false, showEmptyGroups: false }}
+      onChange={change}
+    />
+  )
+  expect(screen.getByLabelText('Show empty groups')).not.toBeChecked()
+  expect(screen.getByLabelText('Show subtasks')).not.toBeChecked()
+  fireEvent.click(screen.getByLabelText('Show subtasks'))
+  expect(change).toHaveBeenLastCalledWith({ future, showSubtasks: true, showEmptyGroups: false })
 })

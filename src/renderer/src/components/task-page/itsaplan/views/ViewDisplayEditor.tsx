@@ -148,7 +148,10 @@ export function ViewDisplayEditor({
           <input
             type="checkbox"
             disabled={disabled}
-            checked={value[key] === true}
+            checked={
+              value[key] === true ||
+              (value[key] === undefined && (key === 'showEmptyGroups' || key === 'showSubtasks'))
+            }
             onChange={(event) => update(key, event.target.checked)}
           />{' '}
           {label}

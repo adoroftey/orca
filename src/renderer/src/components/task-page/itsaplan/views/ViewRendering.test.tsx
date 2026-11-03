@@ -215,3 +215,56 @@ const apiDefaults: ItsaplanApi = {
   connect: unexpectedCall,
   disconnect: unexpectedCall
 }
+
+import { IssueCard } from './ViewIssueLayout'
+it('renders saved card property values using the existing formatter', () => {
+  const savedIssue = {
+    ...issue,
+    statusSince: new Date(Date.now() - 86400000).toISOString(),
+    fieldValues: [{ fieldId: 5, value: 'Custom value', optionIds: [] }]
+  }
+  render(
+    <IssueCard
+      issue={savedIssue}
+      issues={[savedIssue]}
+      metadata={metadata}
+      display={{ properties: ['id', 'dueDate', 'statusAge', 'cf:5'] }}
+      onOpenIssue={vi.fn()}
+    />
+  )
+  expect(screen.getAllByText('P-1')).toHaveLength(2)
+  expect(screen.getByText('2026-03-02')).toBeInTheDocument()
+  expect(screen.getByText(/day/)).toBeInTheDocument()
+  expect(screen.getByText('Custom value')).toBeInTheDocument()
+  expect(screen.getByText('Due date:')).toBeInTheDocument()
+  expect(screen.getByText('cf:5:')).toBeInTheDocument()
+})
+it.each(['card', 'table'])('saved %s shows links only when explicitly enabled', (layout) => {
+  const linked = {
+    ...issue,
+    links: [
+      {
+        id: 10,
+        kind: 'blocks',
+        direction: 'outward',
+        issue: { ...issue, id: 2, identifier: 'P-2', title: 'Dependency' }
+      }
+    ]
+  }
+  const renderView = (showLinks?: boolean) => {
+    const props = {
+      issues: [linked],
+      allIssues: [linked],
+      metadata,
+      display: { group: 'none', ...(showLinks === undefined ? {} : { showLinks }) },
+      onOpenIssue: vi.fn()
+    }
+    return layout === 'card' ? <IssueCard {...props} issue={linked} /> : <ViewTable {...props} />
+  }
+  const { rerender } = render(renderView())
+  expect(screen.queryByText(/Blocks P-2 Dependency/)).not.toBeInTheDocument()
+  rerender(renderView(false))
+  expect(screen.queryByText(/Blocks P-2 Dependency/)).not.toBeInTheDocument()
+  rerender(renderView(true))
+  expect(screen.getByText(/Blocks P-2 Dependency/)).toBeInTheDocument()
+})

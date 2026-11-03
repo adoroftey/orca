@@ -1,3 +1,4 @@
+import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { expect, it, vi } from 'vitest'
 import { loadOAuthBoard, type Shared } from './oauth-board'
 
@@ -11,11 +12,20 @@ function summaries(count: number): Summary[] {
 }
 function fixture(
   rows: Summary[],
-  mode: 'normal' | 'ignore' | 'invalid' | 'duplicate' | 'root-invalid' = 'normal'
+  mode:
+    | 'normal'
+    | 'ignore'
+    | 'invalid'
+    | 'duplicate'
+    | 'root-invalid'
+    | 'empty-children'
+    | 'partial-children'
+    | 'calendar-invalid' = 'normal'
 ) {
   const paths: string[] = []
   const duplicateRanges: { from: string | null; to: string | null }[] = []
-  const close = vi.fn(async () => {})
+  const client = new Client({ name: 'fixture', version: '1' })
+  const close = vi.spyOn(client, 'close').mockResolvedValue(undefined)
   const execute = async (
     path: string,
     _method?: string,
@@ -24,8 +34,7 @@ function fixture(
     shared?: Shared
   ) => {
     if (shared && !shared.client) {
-      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: Only close is used by loadOAuthBoard on this fixture client.
-      shared.client = { close } as NonNullable<Shared['client']>
+      shared.client = client
     }
     paths.push(path)
     if (path.startsWith('/projects/')) {
@@ -40,6 +49,15 @@ function fixture(
         .slice(0, 500)
       if (mode === 'invalid' && (from || to) && selected.length > 0) {
         selected = [{ ...selected[0], createdAt: 'invalid' }, ...selected.slice(1)]
+      }
+      if (mode === 'empty-children' && (from || to)) {
+        selected = []
+      }
+      if (mode === 'partial-children' && (from || to)) {
+        selected = selected.filter((row) => row.id !== rows[0].id)
+      }
+      if (mode === 'calendar-invalid' && !from && !to) {
+        selected = [{ ...selected[0], createdAt: '2024-02-30T00:00:00.000Z' }, ...selected.slice(1)]
       }
       if (mode === 'root-invalid' && !from && !to) {
         selected = [{ ...selected[0], createdAt: 'invalid' }, ...selected.slice(1)]
@@ -142,6 +160,24 @@ it('rejects an ID repeated in disjoint completed pages before hydration', async 
 
 it('rejects a malformed root timestamp without hydrating', async () => {
   const f = fixture(summaries(500), 'root-invalid')
+  await expect(loadOAuthBoard('TEAM', f.execute)).rejects.toThrow()
+  expect(f.paths).toHaveLength(1)
+  expect(f.close).toHaveBeenCalledOnce()
+})
+
+it.each(['empty-children', 'partial-children'] as const)(
+  'rejects %s that omit IDs seen in a full parent before hydration',
+  async (mode) => {
+    const f = fixture(summaries(500), mode)
+    await expect(loadOAuthBoard('TEAM', f.execute)).rejects.toThrow()
+    expect(f.paths.filter((path) => path.startsWith('/projects/')).length).toBeGreaterThan(1)
+    expect(f.paths.every((path) => path.startsWith('/projects/'))).toBe(true)
+    expect(f.close).toHaveBeenCalledOnce()
+  }
+)
+
+it('rejects an impossible calendar date on the full root page before querying bounds', async () => {
+  const f = fixture(summaries(500), 'calendar-invalid')
   await expect(loadOAuthBoard('TEAM', f.execute)).rejects.toThrow()
   expect(f.paths).toHaveLength(1)
   expect(f.close).toHaveBeenCalledOnce()

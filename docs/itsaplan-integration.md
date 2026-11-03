@@ -21,10 +21,10 @@ OAuth requires HTTPS, except for an explicit loopback address. API-key connectio
 support HTTP for private self-hosted instances. Server URLs cannot contain credentials,
 a query or a fragment. Requests do not follow redirects. The server controls MCP and
 project permissions; ask its administrator if MCP access is disabled. OAuth capabilities
-are limited to operations the server exposes as MCP tools. Its issue-list tool has a
-500-item limit without pagination. At 500 active issues Orca cannot verify that the
-board is complete and reports an error. A future server MCP board tool or paginated
-issue listing can remove that limit.
+are limited to operations the server exposes as MCP tools. Its issue-list tool returns at most 500 items per request. Orca can enumerate larger
+boards when creation-time filters work and timestamps are valid. A dense creation-time
+bucket or enumeration resource limits can still prevent a complete board from loading.
+Loading issue details also adds latency on larger boards.
 
 ## Work with tasks
 

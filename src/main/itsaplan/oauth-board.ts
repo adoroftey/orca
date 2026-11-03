@@ -1,3 +1,4 @@
+import { enumerateBoardSummaries } from './oauth-board-pagination'
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js'
 
 type Tool = Awaited<ReturnType<Client['listTools']>>['tools'][number]
@@ -21,37 +22,29 @@ export async function loadOAuthBoard(
 ): Promise<{ status: number; data: unknown }> {
   const context: Shared = {}
   try {
-    const listing = await execute(
-      `/projects/${projectKey}/issues?limit=500`,
-      'GET',
-      undefined,
-      false,
-      context
-    )
-    if (listing.status === 403) {
-      throw new Error('Itsaplan MCP access denied (HTTP 403). Check MCP and project permissions.')
-    }
-    if (listing.status !== 200 || !Array.isArray(listing.data)) {
-      throw new Error('Unable to load Itsaplan board.')
-    }
-    if (listing.data.length >= 500) {
-      throw new Error(
-        'This server OAuth issue list is limited to 500; a complete board is unavailable.'
-      )
-    }
-    const summaries = listing.data
-    const ids = new Set<number>()
-    for (const summary of summaries) {
-      if (
-        !object(summary) ||
-        !Number.isSafeInteger(summary.id) ||
-        summary.id < 1 ||
-        ids.has(summary.id)
-      ) {
-        throw new Error('Invalid Itsaplan board response.')
+    const summaries = await enumerateBoardSummaries(async (range) => {
+      const params = new URLSearchParams({ limit: '500' })
+      if (range.from !== undefined) {
+        params.set('createdFrom', new Date(range.from).toISOString())
       }
-      ids.add(summary.id)
-    }
+      if (range.to !== undefined) {
+        params.set('createdTo', new Date(range.to).toISOString())
+      }
+      const listing = await execute(
+        `/projects/${projectKey}/issues?${params.toString()}`,
+        'GET',
+        undefined,
+        false,
+        context
+      )
+      if (listing.status === 403) {
+        throw new Error('Itsaplan MCP access denied (HTTP 403). Check MCP and project permissions.')
+      }
+      if (listing.status !== 200 || !Array.isArray(listing.data)) {
+        throw new Error('Unable to load Itsaplan board.')
+      }
+      return listing.data
+    })
     const issues: unknown[] = Array.from({ length: summaries.length })
     let index = 0
     await Promise.all(

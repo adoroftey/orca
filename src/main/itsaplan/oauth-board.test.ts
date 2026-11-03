@@ -10,7 +10,7 @@ const session = {
   accessToken: 'token',
   expiresAt: 2_000_000_000_000
 }
-function fixture(count: number) {
+function fixture(count: number, paged = false) {
   const calls: { name: string; arguments: Record<string, unknown> }[] = []
   let active = 0
   let peak = 0
@@ -45,7 +45,12 @@ function fixture(count: number) {
             name: 'list_issues',
             inputSchema: {
               type: 'object',
-              properties: { projectKey: { type: 'string' }, limit: { type: 'integer' } },
+              properties: {
+                projectKey: { type: 'string' },
+                limit: { type: 'integer' },
+                createdFrom: { type: 'string' },
+                createdTo: { type: 'string' }
+              },
               required: ['projectKey'],
               additionalProperties: false
             }
@@ -68,7 +73,26 @@ function fixture(count: number) {
           structuredContent: {
             ok: true,
             status: 200,
-            data: Array.from({ length: count }, (_, index) => ({ id: index + 1 }))
+            data: Array.from({ length: count }, (_, index) => ({
+              id: index + 1,
+              ...(paged
+                ? {
+                    createdAt: new Date(
+                      Date.parse('2024-01-01T00:00:00.000Z') + index * 1000
+                    ).toISOString()
+                  }
+                : {})
+            }))
+              .filter(
+                (row) =>
+                  !paged ||
+                  (typeof row.createdAt === 'string' &&
+                    (!rpc.params.arguments.createdFrom ||
+                      row.createdAt >= rpc.params.arguments.createdFrom) &&
+                    (!rpc.params.arguments.createdTo ||
+                      row.createdAt < rpc.params.arguments.createdTo))
+              )
+              .slice(0, 500)
           },
           content: []
         }
@@ -148,10 +172,24 @@ it('hydrates the active board with a single MCP session and bounded parallel rea
     .mock.calls.filter(([, init]) => String(init?.body).includes('"method":"initialize"'))
   expect(initialization).toHaveLength(1)
 })
-it('fails explicitly at the unpageable 500-issue limit before hydration', async () => {
+it('fails explicitly when a full page lacks creation dates before hydration', async () => {
   const f = fixture(500)
   await expect(f.transport('/projects/TEAM/issues/board')).rejects.toThrow(
     'complete board is unavailable'
   )
   expect(f.calls).toHaveLength(1)
+})
+
+it('sends creation bounds through MCP schema validation for a large board', async () => {
+  const f = fixture(501, true)
+  const result = await f.transport('/projects/TEAM/issues/board')
+  expect(result.status).toBe(200)
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: The fixture constructs this board response with hydrated issues.
+  const data = result.data as { issues: { id: number; description: string }[] }
+  expect(data.issues).toHaveLength(501)
+  expect(new Set(data.issues.map((issue) => issue.id)).size).toBe(501)
+  expect(data.issues.every((issue) => issue.description === 'real detail')).toBe(true)
+  const lists = f.calls.filter((call) => call.name === 'list_issues')
+  expect(lists.some((call) => typeof call.arguments.createdFrom === 'string')).toBe(true)
+  expect(lists.some((call) => typeof call.arguments.createdTo === 'string')).toBe(true)
 })

@@ -60,10 +60,10 @@ describe('issue progress', () => {
       { issueId: 2, relation: 'related' },
       { issueId: 2, relation: 'related' }
     ]
-    const keys = issueRelations({ ...issue, links }).map((relation) => relation.key)
-    const reversed = issueRelations({ ...issue, links: links.toReversed() }).map(
-      (relation) => relation.key
-    )
+    const issueWithLinks = { ...issue, links }
+    const issueWithReversedLinks = { ...issue, links: links.toReversed() }
+    const keys = issueRelations(issueWithLinks).map((relation) => relation.key)
+    const reversed = issueRelations(issueWithReversedLinks).map((relation) => relation.key)
     expect(keys).toHaveLength(4)
     expect(new Set(keys).size).toBe(4)
     expect(new Set(reversed)).toEqual(new Set(keys))

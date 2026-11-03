@@ -79,7 +79,9 @@ const PROVIDER_META: Record<
     Icon: ({ className }) => <LinearIcon className={className} />
   },
   itsaplan: {
-    label: "It's a Plan",
+    get label() {
+      return translate('itsaplan.provider.name', "It's a Plan")
+    },
     get description() {
       return translate(
         'itsaplan.settings.description',

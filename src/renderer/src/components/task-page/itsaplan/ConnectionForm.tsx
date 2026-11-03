@@ -49,7 +49,10 @@ export function ItsaplanConnectionForm({
           type="url"
           value={baseUrl}
           onChange={(event) => setBaseUrl(event.target.value)}
-          placeholder="https://api.plan.example.com"
+          placeholder={translate(
+            'itsaplan.connect.apiUrlPlaceholder',
+            'https://api.plan.example.com'
+          )}
           required
           disabled={busy}
           aria-invalid={Boolean(error)}
@@ -64,7 +67,7 @@ export function ItsaplanConnectionForm({
           type="url"
           value={webBaseUrl}
           onChange={(event) => setWebBaseUrl(event.target.value)}
-          placeholder="https://plan.example.com"
+          placeholder={translate('itsaplan.connect.webUrlPlaceholder', 'https://plan.example.com')}
           disabled={busy}
         />
       </div>

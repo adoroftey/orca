@@ -83,16 +83,10 @@ describe('Itsaplan host-scoped runtime client', () => {
 })
 
 it('refuses an invalid source owner instead of using local credentials', () => {
-  expect(() =>
-    Reflect.apply(createItsaplanRuntimeClient, undefined, [
-      {
-        kind: 'task-source',
-        provider: 'itsaplan',
-        projectId: 'project-1',
-        hostId: 'invalid-owner'
-      }
-    ])
-  ).toThrow('host')
+  const invalidSource = JSON.parse(
+    '{"kind":"task-source","provider":"itsaplan","projectId":"project-1","hostId":"invalid-owner"}'
+  )
+  expect(() => createItsaplanRuntimeClient(invalidSource)).toThrow('host')
   expect(localRequest).not.toHaveBeenCalled()
   expect(callRpc).not.toHaveBeenCalled()
 })

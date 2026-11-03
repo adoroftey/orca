@@ -23656,7 +23656,9 @@
     "connect": {
       "title": "Connect It's a Plan",
       "apiUrl": "API URL",
+      "apiUrlPlaceholder": "https://api.plan.example.com",
       "webUrl": "Web URL (optional)",
+      "webUrlPlaceholder": "https://plan.example.com",
       "apiKey": "API key",
       "connecting": "Connecting…",
       "connect": "Connect"

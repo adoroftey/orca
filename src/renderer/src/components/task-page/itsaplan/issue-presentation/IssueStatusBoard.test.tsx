@@ -269,12 +269,11 @@ it('shows status color and decorative state mark on filters without changing sel
   }
   render(<IssueStatusBoard issues={[issue(1, 1)]} metadata={colored} onOpenIssue={vi.fn()} />)
   const todo = screen.getByRole('button', { name: 'Todo (1)' })
-  expect(todo.style.borderColor).toBe('#3b82f6')
   expect(todo.style.color).toBe('')
-  expect(todo.querySelector('[aria-hidden="true"]')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Done (0)' }).style.borderColor).toBe(
-    'var(--muted-foreground)'
-  )
+  expect(todo.querySelector('[aria-hidden="true"]')).toHaveStyle({ color: '#3b82f6' })
+  expect(
+    screen.getByRole('button', { name: 'Done (0)' }).querySelector('[aria-hidden="true"]')
+  ).toHaveAttribute('style', 'color: var(--muted-foreground);')
   fireEvent.click(todo)
   expect(todo).toHaveAttribute('aria-pressed', 'true')
 })

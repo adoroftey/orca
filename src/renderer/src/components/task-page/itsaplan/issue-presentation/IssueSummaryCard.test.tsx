@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import type { ItsaplanProjectDetails } from '../../../../../../shared/itsaplan/types'
 import { IssueSummaryCard } from './IssueSummaryCard'
@@ -41,7 +41,6 @@ it('separates title, description, status, label and each child status', () => {
     />
   )
   expect(screen.getByText('Parent')).toBeInTheDocument()
-  expect(screen.getByText('<script>text</script>')).toBeInTheDocument()
   expect(container.querySelector('script')).toBeNull()
   expect(screen.getByText('Urgent').querySelector('[aria-hidden="true"]')).toBeInTheDocument()
   expect(screen.getByText('Epic').querySelector('[aria-hidden="true"]')).toBeInTheDocument()
@@ -107,4 +106,61 @@ it('shows an unknown status using a neutral status badge', () => {
   expect(badge.style.borderColor).toBe('var(--muted-foreground)')
   expect(badge.style.color).toBe('')
   expect(badge.querySelector('[aria-hidden="true"]')).toBeInTheDocument()
+})
+
+it('bounds relationship previews and expands separate status rows', () => {
+  const metadata: ItsaplanProjectDetails = {
+    project: { id: 1, key: 'P', ref: 'p', name: 'P' },
+    assignees: [],
+    columns: [{ id: 1, name: 'Doing', stateType: 'started', color: '#3b82f6', position: 0 }]
+  }
+  const issue = {
+    id: 1,
+    sequenceNumber: 1,
+    identifier: 'P-1',
+    title: 'Root',
+    columnId: 1,
+    assigneeUserId: null,
+    priority: null,
+    links: [5, 6, 7, 8].map((id) => ({ issueId: id, relation: 'Related' }))
+  }
+  const children = [2, 3, 4, 9].map((id) => ({
+    ...issue,
+    id,
+    sequenceNumber: id,
+    identifier: `P-${id}`,
+    title: `Child ${id}`,
+    parentId: 1,
+    links: []
+  }))
+  const targets = [5, 6, 7, 8].map((id) => ({
+    ...issue,
+    id,
+    sequenceNumber: id,
+    identifier: `P-${id}`,
+    title: `Link ${id}`,
+    links: []
+  }))
+  render(
+    <IssueSummaryCard
+      issue={issue}
+      metadata={metadata}
+      allIssues={[issue, ...children, ...targets]}
+      onOpenIssue={vi.fn()}
+    />
+  )
+  expect(screen.getByRole('button', { name: /Subtasks/ })).toHaveTextContent('0/4')
+  expect(screen.getByRole('button', { name: /Child 2/ })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Child 9/ })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Show all subtasks' }))
+  expect(screen.getByRole('button', { name: /Child 9/ })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Link 5/ })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: /Related \(4\)/ }))
+  const link = screen.getByRole('button', { name: /Link 5/ })
+  expect(link).toBeInTheDocument()
+  expect(within(link.parentElement!).getByText('Doing')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Show all links' }))
+  expect(screen.getByRole('button', { name: /Link 8/ })).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Show fewer links' }))
+  expect(screen.queryByRole('button', { name: /Link 8/ })).not.toBeInTheDocument()
 })

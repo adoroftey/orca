@@ -6,6 +6,7 @@ import type {
   ItsaplanIssueSummary,
   ItsaplanProjectDetails
 } from '../../../../../../shared/itsaplan/types'
+import { ItsaplanDescription } from '../ItsaplanDescription'
 import { IssuePropertyValue } from './IssuePropertyValue'
 import { IssueRelationships } from './IssueRelationships'
 
@@ -38,7 +39,7 @@ export function IssueSummaryCard({
   const updatedAt =
     'updatedAt' in issue && typeof issue.updatedAt === 'string' ? issue.updatedAt : ''
   return (
-    <article className="min-w-0 rounded-md border border-border bg-card p-3 text-card-foreground">
+    <article className="min-w-0 rounded-md border border-border bg-card p-2 text-card-foreground">
       <div className="flex items-start justify-between gap-2">
         <button
           type="button"
@@ -46,13 +47,11 @@ export function IssueSummaryCard({
           onClick={() => onOpenIssue(issue.id)}
         >
           <span className="font-mono text-xs text-muted-foreground">{issue.identifier}</span>{' '}
-          <span className="text-sm font-medium">{issue.title}</span>
+          <span className="line-clamp-2 text-sm font-medium">{issue.title}</span>
         </button>
         {actions}
       </div>
-      {!compact && description && (
-        <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground">{description}</p>
-      )}
+      {!compact && description && <ItsaplanDescription content={description} preview />}
       <div className="mt-2 flex flex-wrap items-center gap-1">
         {(issue.archived === true || !!issue.archivedAt) && (
           <Badge variant="secondary">{translate('itsaplan.issue.archived', 'Archived')}</Badge>
@@ -83,7 +82,12 @@ export function IssueSummaryCard({
       </div>
       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
         {fields
-          .filter((field) => ['assignee', 'delegate'].includes(field))
+          .filter(
+            (field) =>
+              ['assignee', 'delegate'].includes(field) &&
+              (propertyValues?.[field] ||
+                (field === 'assignee' ? issue.assigneeUserId : issue.delegateUserId))
+          )
           .map((field) => (
             <span key={field}>
               {field === 'assignee'
@@ -111,6 +115,7 @@ export function IssueSummaryCard({
         allIssues={allIssues}
         onOpenIssue={onOpenIssue}
         display={display}
+        compact={compact}
       />
     </article>
   )

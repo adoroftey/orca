@@ -1,3 +1,4 @@
+import { ItsaplanDescription } from './ItsaplanDescription'
 import { IssueStatusBadge } from './issue-presentation/IssueStatusBadge'
 import { useEffect, useId, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -239,11 +240,10 @@ export function ItsaplanIssueDetails({
               </Button>
             </form>
           ) : null}
-          <CommentMarkdown
+          <ItsaplanDescription
             content={
               issue.description || translate('itsaplan.issue.noDescription', 'No description.')
             }
-            variant="document"
           />
           <div className="space-y-3 border-t border-border pt-4">
             <h3 className="text-sm font-medium">

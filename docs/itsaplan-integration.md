@@ -34,6 +34,10 @@ at most 500 matches; narrow a search that reaches the cap. This endpoint has no 
 pagination. The board endpoint supplies the complete active list, while full descriptions
 are loaded separately for an issue.
 
+Descriptions support sanitized Markdown. Issue cards show a short preview, while issue and
+initiative details offer an expandable description. Subtasks show up to three rows initially;
+relationship groups start collapsed and can be expanded to inspect their targets.
+
 The **Only statuses with issues** option is enabled by default in board layouts. Turn it
 off to show all project statuses, including empty ones; the stage filters and counts stay
 unchanged. Status dots and borders use the project’s status colors. The option is local

@@ -485,3 +485,22 @@ it('shows activity status movement from the feed payload', async () => {
   expect(await screen.findByText(/Review → In Progress/)).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'P-42' })).toBeInTheDocument()
 })
+
+it('renders an initiative description as bounded sanitized markdown', async () => {
+  const planning = setup()
+  vi.mocked(planning.getInitiative).mockResolvedValueOnce({
+    ...item,
+    description: '# Plan\n\n- Prepare\n\n<script>alert(1)</script>'
+  })
+  fireEvent.click(await screen.findByRole('button', { name: 'First' }))
+  const expand = await screen.findByRole('button', { name: 'Show full description' })
+  expect(expand).toHaveAttribute('aria-expanded', 'false')
+  fireEvent.click(expand)
+  expect(await screen.findByRole('heading', { name: 'Plan' })).toBeInTheDocument()
+  expect(screen.getByRole('listitem')).toHaveTextContent('Prepare')
+  expect(document.querySelector('script')).toBeNull()
+  expect(screen.getByRole('button', { name: 'Collapse description' })).toHaveAttribute(
+    'aria-expanded',
+    'true'
+  )
+})

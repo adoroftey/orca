@@ -24050,7 +24050,13 @@
       "noIssues": "No issues in this selection.",
       "unknownStage": "Unknown stage",
       "assignee": "Assignee",
-      "delegate": "Delegate"
+      "delegate": "Delegate",
+      "showFullDescription": "Show full description",
+      "collapseDescription": "Collapse description",
+      "showAllSubtasks": "Show all subtasks",
+      "showFewerSubtasks": "Show fewer subtasks",
+      "showAllLinks": "Show all links",
+      "showFewerLinks": "Show fewer links"
     },
     "execution": {
       "unknown": "Unknown",

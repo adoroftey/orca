@@ -180,7 +180,11 @@ it('renders links and supports collapsing nested subtasks', () => {
       onOpenIssue={open}
     />
   )
-  expect(screen.getByText('blocks P-2 Child')).toBeInTheDocument()
+  const blocks = screen.getByRole('button', { name: 'Blocks (1)' })
+  expect(blocks).toHaveAttribute('aria-expanded', 'false')
+  fireEvent.click(blocks)
+  expect(screen.getByRole('button', { name: 'P-2 Child' })).toBeInTheDocument()
+  fireEvent.click(blocks)
   fireEvent.click(screen.getByRole('button', { name: /Subtasks/ }))
   fireEvent.click(screen.getByText('P-2 Child'))
   expect(open).toHaveBeenCalledWith(2)
@@ -268,11 +272,14 @@ it.each(['card', 'table'])('saved %s shows links only when explicitly enabled', 
     return layout === 'card' ? <IssueCard {...props} issue={linked} /> : <ViewTable {...props} />
   }
   const { rerender } = render(renderView())
-  expect(screen.queryByText(/Blocks P-2 Dependency/)).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Blocks (1)' })).not.toBeInTheDocument()
   rerender(renderView(false))
-  expect(screen.queryByText(/Blocks P-2 Dependency/)).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Blocks (1)' })).not.toBeInTheDocument()
   rerender(renderView(true))
-  expect(screen.getByText(/Blocks P-2 Dependency/)).toBeInTheDocument()
+  const blocks = screen.getByRole('button', { name: 'Blocks (1)' })
+  expect(blocks).toHaveAttribute('aria-expanded', 'false')
+  fireEvent.click(blocks)
+  expect(screen.getByRole('button', { name: 'P-2 Dependency' })).toBeInTheDocument()
 })
 
 it('uses status metadata for group and subgroup badges while preserving counts and collapse', () => {

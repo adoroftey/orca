@@ -1,3 +1,4 @@
+import { ItsaplanDescription } from '../ItsaplanDescription'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -228,10 +229,12 @@ export function InitiativeDetail({
                 </Button>
               )}
             </div>
-            <p>
-              {item.description ||
-                translate('itsaplan.planning.initiatives.noDescription', 'No description.')}
-            </p>
+            <ItsaplanDescription
+              content={
+                item.description ||
+                translate('itsaplan.planning.initiatives.noDescription', 'No description.')
+              }
+            />
             <p>
               {translate('itsaplan.planning.initiatives.status', 'Status')}:{' '}
               <Badge variant="secondary">{initiativeValueLabel(item.status)}</Badge> ·{' '}

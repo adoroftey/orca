@@ -7,7 +7,6 @@ import type {
   ItsaplanProjectDetails
 } from '../../../../../../shared/itsaplan/types'
 import { IssueStatusMark } from './IssueStatusMark'
-import { issueStatusColor } from './issue-status-color'
 import { IssueSummaryCard } from './IssueSummaryCard'
 import { IssueExecutionStages } from './IssueExecutionStages'
 import { IssueExecutionMatrix } from './IssueExecutionMatrix'
@@ -112,8 +111,6 @@ export function IssueStatusBoard({
               key={stage.key}
               size="sm"
               variant={filter === stage.key ? 'secondary' : 'ghost'}
-              className="border"
-              style={{ borderColor: issueStatusColor(stage.color) }}
               aria-pressed={filter === stage.key}
               onClick={() => setFilter(stage.key)}
             >

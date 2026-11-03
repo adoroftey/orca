@@ -1,3 +1,4 @@
+import { dispatchPlanningRequest } from './planning-request'
 import { ItsaplanRequestParams } from '../../shared/rpc-contract/itsaplan-params'
 import { itsaplanConnection } from './connection'
 
@@ -8,6 +9,8 @@ export async function dispatchItsaplanRequest(input: unknown): Promise<unknown> 
   }
   const request = parsed.data
   switch (request.method) {
+    case 'planning':
+      return dispatchPlanningRequest(request.params)
     case 'status':
       return itsaplanConnection.status()
     case 'connect':

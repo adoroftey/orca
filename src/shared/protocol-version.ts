@@ -24,7 +24,7 @@ import {
 import { SKILL_RUNTIME_CAPABILITIES } from './skill-install-capability'
 import { SOURCE_CONTROL_RUNTIME_CAPABILITIES } from './source-control-runtime-capabilities'
 import { TASK_SOURCE_RUNTIME_CAPABILITIES } from './task-source-runtime-capabilities'
-import { ITSAPLAN_RUNTIME_CAPABILITY } from './itsaplan/types'
+import { ITSAPLAN_RUNTIME_CAPABILITY, ITSAPLAN_PLANNING_RUNTIME_CAPABILITY } from './itsaplan/types'
 import { TERMINAL_RUNTIME_CAPABILITIES } from './terminal-runtime-capabilities'
 import { WORKSPACE_PORTS_RUNTIME_CAPABILITIES } from './workspace-ports-runtime-capabilities'
 import {
@@ -136,6 +136,7 @@ export const RUNTIME_CAPABILITIES = /* @__PURE__ */ (() =>
     ...SOURCE_CONTROL_RUNTIME_CAPABILITIES,
     ...TASK_SOURCE_RUNTIME_CAPABILITIES,
     ITSAPLAN_RUNTIME_CAPABILITY,
+    ITSAPLAN_PLANNING_RUNTIME_CAPABILITY,
     ...AI_VAULT_RUNTIME_CAPABILITIES
   ] as const)()
 

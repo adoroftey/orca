@@ -1,3 +1,4 @@
+import { ItsaplanPlanningParams } from '../../../../shared/rpc-contract/itsaplan-planning-params'
 import { defineMethod } from '../core'
 import {
   ItsaplanAddCommentParams,
@@ -13,6 +14,12 @@ import {
 import { dispatchItsaplanRequest } from '../../../itsaplan/request'
 
 export const ITSAPLAN_METHODS = [
+  defineMethod({
+    name: 'itsaplan.planning',
+    permission: 'workspace',
+    params: ItsaplanPlanningParams,
+    handler: (params) => dispatchItsaplanRequest({ method: 'planning', params })
+  }),
   defineMethod({
     name: 'itsaplan.connect',
     permission: 'accounts-admin',

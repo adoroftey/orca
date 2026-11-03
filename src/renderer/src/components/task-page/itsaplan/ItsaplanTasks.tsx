@@ -9,7 +9,8 @@ import type {
 } from '../../../../../shared/itsaplan/types'
 import { ItsaplanConnectionForm } from './ConnectionForm'
 import { ItsaplanSelect } from './ItsaplanSelect'
-import { ItsaplanProjectTasks, type ItsaplanWorkspaceActions } from './ProjectTasks'
+import type { ItsaplanWorkspaceActions } from './ProjectTasks'
+import { PlanningShell } from './PlanningShell'
 import { itsaplanErrorMessage, readItsaplanProject, saveItsaplanProject } from './request-state'
 
 type Props = { api: ItsaplanApi; hostKey: string } & ItsaplanWorkspaceActions
@@ -194,7 +195,7 @@ function ItsaplanHostTasks({ api, hostKey, ...workspaceActions }: Props) {
             </div>
           ) : null}
           {selectedProject ? (
-            <ItsaplanProjectTasks
+            <PlanningShell
               key={`${connection.baseUrl}:${selectedProject.ref}`}
               api={api}
               connection={connection}

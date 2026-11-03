@@ -1,3 +1,5 @@
+import type { ItsaplanPlanningApi } from './planning-types'
+
 export type ItsaplanProject = {
   id: number
   key: string
@@ -5,6 +7,14 @@ export type ItsaplanProject = {
   name: string
   teamName?: string | null
   archivedAt?: string | null
+  initiativesEnabled?: boolean
+  dashboardsEnabled?: boolean
+  cyclesEnabled?: boolean
+  subtasksEnabled?: boolean
+  pointsEstimateEnabled?: boolean
+  timeEstimateEnabled?: boolean
+  timeLoggingEnabled?: boolean
+  availableFeatures?: string[]
 }
 
 export type ItsaplanColumn = {
@@ -27,7 +37,11 @@ export type ItsaplanProjectDetails = {
   project: ItsaplanProject
   columns: ItsaplanColumn[]
   assignees: ItsaplanAssignee[]
-  viewer?: { role?: string }
+  issueTypes?: { id: number; name: string; icon?: string; color?: string; [key: string]: unknown }[]
+  labels?: { id: number; name: string; color?: string; [key: string]: unknown }[]
+  labelGroups?: { id: number; name: string; [key: string]: unknown }[]
+  customFields?: { id: number; name: string; [key: string]: unknown }[]
+  viewer?: { role?: string; timeZone?: string }
   permissions?: Record<string, Record<string, boolean>>
 }
 
@@ -40,6 +54,23 @@ export type ItsaplanIssueSummary = {
   assigneeUserId: string | null
   priority: string | null
   archived?: boolean
+  typeId?: number | null
+  initiativeId?: number | null
+  initiative?: { id: number; title: string; status: string } | null
+  cycle?: { id: number; name?: string; status: string } | null
+  cycleId?: number | null
+  delegateUserId?: string | null
+  parentId?: number | null
+  labelIds?: number[]
+  fieldValues?: { fieldId: number; value: unknown; valueEnd?: string | null; optionIds: number[] }[]
+  startDate?: string | null
+  dueDate?: string | null
+  completedAt?: string | null
+  statusSince?: string | null
+  archivedAt?: string | null
+  estimatePoints?: number | null
+  estimateMinutes?: number | null
+  loggedMinutes?: number | null
 }
 
 export type ItsaplanIssue = ItsaplanIssueSummary & {
@@ -55,6 +86,16 @@ export type ItsaplanIssueCreate = {
   description?: string
   assigneeUserId?: string | null
   priority?: string | null
+  initiativeId?: number | null
+  typeId?: number | null
+  parentId?: number | null
+  delegateUserId?: string | null
+  cycleId?: number | null
+  startDate?: string | null
+  dueDate?: string | null
+  labelIds?: number[]
+  estimatePoints?: number | null
+  estimateMinutes?: number | null
 }
 
 export type ItsaplanIssueUpdate = Partial<ItsaplanIssueCreate>
@@ -85,6 +126,7 @@ export type ItsaplanConnectionStatus = {
 export type ItsaplanConnectArgs = { baseUrl: string; webBaseUrl?: string; apiKey: string }
 
 export type ItsaplanRestApi = {
+  planning?: ItsaplanPlanningApi
   listProjects(): Promise<ItsaplanProject[]>
   getProject(projectRef: string): Promise<ItsaplanProjectDetails>
   listIssues(projectRef: string): Promise<ItsaplanIssue[]>
@@ -102,5 +144,6 @@ export type ItsaplanApi = ItsaplanRestApi & {
   disconnect(): Promise<void>
 }
 
+export const ITSAPLAN_PLANNING_RUNTIME_CAPABILITY = 'itsaplan.planning.v1' as const
 export const ITSAPLAN_RUNTIME_CAPABILITY = 'itsaplan.tasks.v1' as const
 export const ITSAPLAN_UPDATE_REQUIRED = 'Update Orca on this host to use Itsaplan Tasks.'

@@ -1,3 +1,4 @@
+import { createPlanningFacade } from './planning-support'
 import { mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
@@ -91,7 +92,16 @@ export function createItsaplanConnection(
     }
     return createItsaplanClient({ ...record, fetch: options.fetch })
   }
+  const planning = (expectedBaseUrl?: string) =>
+    createPlanningFacade(() => {
+      const api = client(expectedBaseUrl).planning
+      if (!api) {
+        throw new Error('Planning is unavailable.')
+      }
+      return api
+    })
   const restApi = (expectedBaseUrl?: string): ItsaplanRestApi => ({
+    planning: planning(expectedBaseUrl),
     listProjects: async () => client(expectedBaseUrl).listProjects(),
     getProject: async (ref) => client(expectedBaseUrl).getProject(ref),
     listIssues: async (ref) => client(expectedBaseUrl).listIssues(ref),

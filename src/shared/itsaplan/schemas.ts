@@ -42,7 +42,10 @@ export const ItsaplanProjectDetailsSchema = z
         })
         .passthrough()
     ),
-    viewer: z.object({ role: z.string().optional() }).passthrough().optional(),
+    viewer: z
+      .object({ role: z.string().optional(), timeZone: z.string().optional() })
+      .passthrough()
+      .optional(),
     permissions: z.record(z.string(), z.record(z.string(), z.boolean())).optional()
   })
   .passthrough()
@@ -56,7 +59,43 @@ export const ItsaplanIssueSummarySchema = z
     columnId: ItsaplanId,
     assigneeUserId: z.string().nullable(),
     priority: z.string().nullable(),
-    archived: z.boolean().optional()
+    archived: z.boolean().optional(),
+    typeId: ItsaplanId.nullable().optional(),
+    initiativeId: ItsaplanId.nullable().optional(),
+    initiative: z
+      .object({ id: ItsaplanId, title: z.string(), status: z.string() })
+      .passthrough()
+      .nullable()
+      .optional(),
+    cycle: z
+      .object({ id: ItsaplanId, name: z.string().optional(), status: z.string() })
+      .passthrough()
+      .nullable()
+      .optional(),
+    cycleId: ItsaplanId.nullable().optional(),
+    delegateUserId: z.string().nullable().optional(),
+    parentId: ItsaplanId.nullable().optional(),
+    labelIds: z.array(ItsaplanId).optional(),
+    fieldValues: z
+      .array(
+        z
+          .object({
+            fieldId: ItsaplanId,
+            value: z.unknown(),
+            valueEnd: z.string().nullable().optional(),
+            optionIds: z.array(ItsaplanId)
+          })
+          .passthrough()
+      )
+      .optional(),
+    startDate: z.string().nullable().optional(),
+    dueDate: z.string().nullable().optional(),
+    completedAt: z.string().nullable().optional(),
+    statusSince: z.string().nullable().optional(),
+    archivedAt: z.string().nullable().optional(),
+    estimatePoints: z.number().nullable().optional(),
+    estimateMinutes: z.number().nullable().optional(),
+    loggedMinutes: z.number().nullable().optional()
   })
   .passthrough()
 
@@ -73,7 +112,17 @@ export const ItsaplanIssueCreateSchema = z
     columnId: ItsaplanId,
     description: z.string().max(50_000).optional(),
     assigneeUserId: z.string().max(500).nullable().optional(),
-    priority: z.enum(['urgent', 'high', 'medium', 'low']).nullable().optional()
+    priority: z.enum(['urgent', 'high', 'medium', 'low']).nullable().optional(),
+    initiativeId: ItsaplanId.nullable().optional(),
+    typeId: ItsaplanId.nullable().optional(),
+    parentId: ItsaplanId.nullable().optional(),
+    delegateUserId: z.string().max(500).nullable().optional(),
+    cycleId: ItsaplanId.nullable().optional(),
+    startDate: z.string().max(100).nullable().optional(),
+    dueDate: z.string().max(100).nullable().optional(),
+    labelIds: z.array(ItsaplanId).optional(),
+    estimatePoints: z.number().nullable().optional(),
+    estimateMinutes: z.number().nullable().optional()
   })
   .strict()
 

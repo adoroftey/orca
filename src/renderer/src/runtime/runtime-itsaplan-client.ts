@@ -1,6 +1,7 @@
 import type { ItsaplanApi } from '../../../shared/itsaplan/types'
 import {
   ITSAPLAN_RUNTIME_CAPABILITY,
+  ITSAPLAN_PLANNING_RUNTIME_CAPABILITY,
   ITSAPLAN_UPDATE_REQUIRED
 } from '../../../shared/itsaplan/types'
 import { createItsaplanScopedTransportApi } from '../../../shared/itsaplan/transport'
@@ -30,7 +31,7 @@ export function createItsaplanRuntimeClient(
     async <T>(method: string, params?: unknown): Promise<T> => {
       await assertRuntimeEnvironmentCapability(
         target.environmentId,
-        ITSAPLAN_RUNTIME_CAPABILITY,
+        method === 'planning' ? ITSAPLAN_PLANNING_RUNTIME_CAPABILITY : ITSAPLAN_RUNTIME_CAPABILITY,
         ITSAPLAN_UPDATE_REQUIRED
       )
       return callRuntimeRpc<T>(target, `itsaplan.${method}`, params, { timeoutMs: 35_000 })

@@ -381,6 +381,7 @@ import {
   ItsaplanSearchParams,
   ItsaplanUpdateParams
 } from './itsaplan-params'
+import { ItsaplanPlanningParams } from './itsaplan-planning-params'
 import { JiraFavouriteFilterParams } from './jira-favourite-filter-params'
 import {
   AssignableUsers,
@@ -1187,6 +1188,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'itsaplan.listComments': ItsaplanCommentsParams,
   'itsaplan.listIssues': ItsaplanProjectParams,
   'itsaplan.listProjects': ItsaplanScopeParams,
+  'itsaplan.planning': ItsaplanPlanningParams,
   'itsaplan.searchIssues': ItsaplanSearchParams,
   'itsaplan.status': null,
   'itsaplan.updateIssue': ItsaplanUpdateParams,

@@ -7,6 +7,10 @@ import type {
 
 type Changes = Partial<Omit<PlanningViewInput, 'isPrivate'>>
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
 export function jsonEqual(a: unknown, b: unknown): boolean {
   if (a === b) {
     return true
@@ -19,15 +23,12 @@ export function jsonEqual(a: unknown, b: unknown): boolean {
       a.every((v, i) => jsonEqual(v, b[i]))
     )
   }
-  if (!a || !b || typeof a !== 'object' || typeof b !== 'object') {
+  if (!isRecord(a) || !isRecord(b)) {
     return false
   }
   const ak = Object.keys(a).sort()
   const bk = Object.keys(b).sort()
-  return (
-    ak.length === bk.length &&
-    ak.every((key, i) => key === bk[i] && jsonEqual(Reflect.get(a, key), Reflect.get(b, key)))
-  )
+  return ak.length === bk.length && ak.every((key, i) => key === bk[i] && jsonEqual(a[key], b[key]))
 }
 
 export function buildViewChanges(original: PlanningView, draft: PlanningView): Changes {

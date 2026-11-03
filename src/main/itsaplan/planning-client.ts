@@ -39,7 +39,7 @@ function supportsPrivateCreate(schema: unknown, components: unknown): boolean {
 export function createPlanningClient(request: Request, valid: Validate): ItsaplanPlanningApi {
   const project = (ref: string) => `/projects/${encodeURIComponent(valid(ItsaplanProjectRef, ref))}`
   const item = (kind: string, id: number) => `/${kind}/${valid(ItsaplanId, id)}`
-  const query = (values: object) => {
+  const query = (values: Record<string, unknown>) => {
     const p = new URLSearchParams()
     for (const [k, v] of Object.entries(values)) {
       if (v !== undefined) {

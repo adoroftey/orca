@@ -13,24 +13,24 @@ Done criteria:
 
 Tasks (each author bounded to one contract mechanism or UI unit, no redesign):
 T1 QA public planning transport/credentials fencing tests, ORCINT-20/24. needs:none. proves:4 (with integration evidence).
- Checks: vitest planning transport/request contract tests; native request invalid schema RED then GREEN.
+Checks: vitest planning transport/request contract tests; native request invalid schema RED then GREEN.
 T2 Shared planning DTO/schema + REST/IPC/RPC implementation per contract, ORCINT-19/20.
- needs:T1 red before mutation mechanism edits; new DTO scaffolding may parallel. contributes:1,2,3,4.
- Checks: client planning tests, IPC/request tests, runtime capability tests; node/web typecheck.
+needs:T1 red before mutation mechanism edits; new DTO scaffolding may parallel. contributes:1,2,3,4.
+Checks: client planning tests, IPC/request tests, runtime capability tests; node/web typecheck.
 T3 Initiatives panel CRUD/paging/feed/linking, ORCINT-6/7/8. needs:fixed contract/T2 types (may author against contract).
- proves:1. Checks: panel workflows mocked actual shape, paging, permission/feature, changes+return, UI fixture.
+proves:1. Checks: panel workflows mocked actual shape, paging, permission/feature, changes+return, UI fixture.
 T4 Views filter engine and data/layout semantics, ORCINT-11/12. needs:T2 DTO. contributes:2.
- Checks: upstream parity vectors, unknown filters, custom fields/cycle/initiative, stable sort/group/date edge cases.
+Checks: upstream parity vectors, unknown filters, custom fields/cycle/initiative, stable sort/group/date edge cases.
 T5 Views panel/editor and four layouts, ORCINT-10/12/13. needs:T4, T2. proves:2.
- Checks: load preexisting View, edits Save/Discard, unknown blobs retained, API support controls, issue open.
+Checks: load preexisting View, edits Save/Discard, unknown blobs retained, API support controls, issue open.
 T6 Dashboard widget rendering/analytics and configuration, ORCINT-15/16/17. needs:T2. contributes:3.
- Checks: 11 types and unknown widgets, failures isolated, server response examples, editor Save/Discard/geometry/narrow.
+Checks: 11 types and unknown widgets, failures isolated, server response examples, editor Save/Discard/geometry/narrow.
 T7 Native section shell + metadata + shared issue return, ORCINT-6/10/15. needs:T3,T5,T6 (placeholder mount may first wave).
- proves:3 (with T6 evidence); contributes:1,2,4. Checks: integration panel navigation and project/host switching.
+proves:3 (with T6 evidence); contributes:1,2,4. Checks: integration panel navigation and project/host switching.
 T8 QA live local existing-object roundtrips, quality/typecheck/build/catalog/fixtures/docs, ORCINT-24/25/26.
- needs:T2..T7. proves:5 and closes 4 with independent review. No full suite green claim on timeout.
+needs:T2..T7. proves:5 and closes 4 with independent review. No full suite green claim on timeout.
 T9 Fresh source review across all contracts and permissions, then bounded fixes by owners.
- needs:T8 evidence. Spec closing read maps all 5 criteria to actual artifacts. No done status without evidence.
+needs:T8 evidence. Spec closing read maps all 5 criteria to actual artifacts. No done status without evidence.
 
 Assembly tasks split by obligation: transport owner owns capability+RPC; semantic owner owns filter fidelity;
 shell owner owns shared issue/workspace return; each UI owner owns async guards/unknown-data preservation in its editor.

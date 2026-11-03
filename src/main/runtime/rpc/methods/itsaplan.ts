@@ -18,7 +18,8 @@ export const ITSAPLAN_METHODS = [
     name: 'itsaplan.planning',
     permission: 'workspace',
     params: ItsaplanPlanningParams,
-    handler: (params) => dispatchItsaplanRequest({ method: 'planning', params })
+    handler: async (params) =>
+      (await dispatchItsaplanRequest({ method: 'planning', params })) ?? null
   }),
   defineMethod({
     name: 'itsaplan.connect',

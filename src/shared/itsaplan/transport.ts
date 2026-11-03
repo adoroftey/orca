@@ -3,7 +3,7 @@ import type { ItsaplanApi, ItsaplanConnectionStatus } from './types'
 export type ItsaplanCaller = <T>(method: string, params?: unknown) => Promise<T>
 
 export function createItsaplanTransportApi(call: ItsaplanCaller): ItsaplanApi {
-  const planning = <T>(operation: string, args: object = {}) =>
+  const planning = <T>(operation: string, args: Record<string, unknown> = {}) =>
     call<T>('planning', { operation, args })
   return {
     planning: {

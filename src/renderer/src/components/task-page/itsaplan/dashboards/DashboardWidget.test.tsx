@@ -415,7 +415,7 @@ it('keeps the full match count and parent context when recent issues are limited
   )
   expect(screen.getByText(/Selected: 7.*Loaded: 7.*Total matching: 9/)).toBeInTheDocument()
   expect(screen.getByText('Context')).toBeInTheDocument()
-  expect(screen.getByText(/All children: 0\/8/)).toBeInTheDocument()
+  expect(screen.getByText(/Loaded children: 0\/8/)).toBeInTheDocument()
   expect(screen.queryByText('Child 1')).not.toBeInTheDocument()
   fireEvent.click(screen.getAllByRole('button', { name: 'P-100 Parent context' })[0])
   expect(open).toHaveBeenCalledWith(100)

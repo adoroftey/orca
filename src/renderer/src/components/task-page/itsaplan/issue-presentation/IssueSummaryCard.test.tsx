@@ -150,10 +150,16 @@ it('bounds relationship previews and expands separate status rows', () => {
     />
   )
   expect(screen.getByRole('button', { name: /Subtasks/ })).toHaveTextContent('0/4')
+  const subtaskList = screen.getByRole('list')
+  expect(within(subtaskList).getAllByRole('listitem')).toHaveLength(3)
+  for (const item of within(subtaskList).getAllByRole('listitem')) {
+    expect(within(item).getByText('Doing')).toBeInTheDocument()
+  }
   expect(screen.getByRole('button', { name: /Child 2/ })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Child 9/ })).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Show all subtasks' }))
   expect(screen.getByRole('button', { name: /Child 9/ })).toBeInTheDocument()
+  expect(within(subtaskList).getAllByRole('listitem')).toHaveLength(4)
   expect(screen.queryByRole('button', { name: /Link 5/ })).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: /Related \(4\)/ }))
   const link = screen.getByRole('button', { name: /Link 5/ })
@@ -163,4 +169,26 @@ it('bounds relationship previews and expands separate status rows', () => {
   expect(screen.getByRole('button', { name: /Link 8/ })).toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Show fewer links' }))
   expect(screen.queryByRole('button', { name: /Link 8/ })).not.toBeInTheDocument()
+})
+
+it('shows the issue identifier once even when a saved view includes id', () => {
+  const item = {
+    id: 7,
+    sequenceNumber: 7,
+    identifier: 'P-7',
+    title: 'Saved issue',
+    columnId: 1,
+    assigneeUserId: null,
+    priority: null
+  }
+  render(
+    <IssueSummaryCard
+      issue={item}
+      metadata={null}
+      onOpenIssue={vi.fn()}
+      properties={['id']}
+      propertyValues={{ id: 'P-7' }}
+    />
+  )
+  expect(screen.getAllByText('P-7')).toHaveLength(1)
 })

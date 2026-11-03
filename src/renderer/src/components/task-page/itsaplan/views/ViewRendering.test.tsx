@@ -242,7 +242,7 @@ it('renders saved card property values using the existing formatter', () => {
       onOpenIssue={vi.fn()}
     />
   )
-  expect(screen.getAllByText('P-1')).toHaveLength(2)
+  expect(screen.getAllByText('P-1')).toHaveLength(1)
   expect(screen.getByText('2026-03-02')).toBeInTheDocument()
   expect(screen.getByText(/day/)).toBeInTheDocument()
   expect(screen.getByText('Custom value')).toBeInTheDocument()

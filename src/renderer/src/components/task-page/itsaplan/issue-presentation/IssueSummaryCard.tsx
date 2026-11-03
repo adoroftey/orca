@@ -57,7 +57,7 @@ export function IssueSummaryCard({
           <Badge variant="secondary">{translate('itsaplan.issue.archived', 'Archived')}</Badge>
         )}
         {fields
-          .filter((field) => !['assignee', 'delegate'].includes(field))
+          .filter((field) => !['id', 'assignee', 'delegate'].includes(field))
           .map((field) => {
             const value = (
               <IssuePropertyValue

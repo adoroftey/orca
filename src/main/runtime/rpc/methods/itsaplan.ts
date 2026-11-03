@@ -25,7 +25,20 @@ export const ITSAPLAN_METHODS = [
     name: 'itsaplan.connect',
     permission: 'accounts-admin',
     params: ItsaplanConnectParams,
-    handler: (params) => dispatchItsaplanRequest({ method: 'connect', params })
+    handler: (params) => {
+      if (params.authMethod === 'oauth') {
+        throw new Error('OAuth sign-in is available only on the local desktop.')
+      }
+      return dispatchItsaplanRequest({ method: 'connect', params })
+    }
+  }),
+  defineMethod({
+    name: 'itsaplan.cancelConnect',
+    permission: 'accounts-admin',
+    params: null,
+    handler: () => {
+      throw new Error('OAuth sign-in is available only on the local desktop.')
+    }
   }),
   defineMethod({
     name: 'itsaplan.disconnect',

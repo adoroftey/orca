@@ -18,7 +18,12 @@ import { createPlanningClient } from './planning-client'
 
 export function createItsaplanClient(options: {
   baseUrl: string
-  apiKey: string
+  apiKey?: string
+  transport?: (
+    path: string,
+    method: string,
+    body?: unknown
+  ) => Promise<{ status: number; data: unknown }>
   fetch?: typeof fetch
 }): ItsaplanRestApi {
   const { request, validated } = createItsaplanHttpClient(options)

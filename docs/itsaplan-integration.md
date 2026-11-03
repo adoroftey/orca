@@ -1,25 +1,30 @@
 # It's a Plan in Tasks
 
-This Orca fork adds It's a Plan as a native Tasks source. It uses the tracker REST API;
-no MCP server or external agent runner is required for browsing and editing tasks.
+This Orca fork adds It's a Plan as a native Tasks source. Browser sign-in uses the tracker's MCP endpoint; the advanced API-key connection uses its REST API.
 
 ## Connect
 
 1. Open **Tasks → It's a Plan**. If the source is hidden, enable it in **Settings → Tasks**.
-2. Enter the **API URL** of your instance and a personal API key from It's a Plan.
-3. Set **Web URL** when the web interface uses a different address. Otherwise it defaults
-   to the API URL. For example, a local Docker installation may use `http://localhost:3000` for API
-   and `http://localhost:3001` for web.
-4. Connect and select a project.
+2. Enter the **API URL** and choose **Sign in via browser**. Complete the server's
+   consent screen in your browser. OAuth sign-in must be started on the local desktop.
+3. Set **Web URL** when the web interface uses a different address; otherwise it defaults
+   to the API URL.
+4. Select a project. If sign-in is pending, **Cancel sign-in** stops the attempt.
 
-One connection is stored per Orca profile on the selected execution host. Switching the
-host switches the connection scope. Remote hosts must run a build with this integration;
-older hosts show an update-required message. The host OS keyring must provide secure
-credential storage. Orca verifies the API key before replacing an existing connection,
-and a failed replacement keeps the prior one.
+The **Advanced: API key** option remains available for existing REST API integrations.
+One connection is stored per Orca profile on the selected execution host, protected by
+its OS keyring. Orca validates a new connection before replacing the previous one; a
+failed or cancelled sign-in leaves it intact. Existing connections on remote hosts can
+still be used, but browser sign-in must be initiated on that host's local desktop.
 
-Explicit HTTP addresses are supported for local or private self-hosted instances. Server
-URLs cannot contain credentials, a query or a fragment. API requests do not follow redirects.
+OAuth requires HTTPS, except for an explicit loopback address. API-key connections also
+support HTTP for private self-hosted instances. Server URLs cannot contain credentials,
+a query or a fragment. Requests do not follow redirects. The server controls MCP and
+project permissions; ask its administrator if MCP access is disabled. OAuth capabilities
+are limited to operations the server exposes as MCP tools. Its issue-list tool has a
+500-item limit without pagination. At 500 active issues Orca cannot verify that the
+board is complete and reports an error. A future server MCP board tool or paginated
+issue listing can remove that limit.
 
 ## Work with tasks
 

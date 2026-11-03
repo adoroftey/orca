@@ -1180,6 +1180,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'hostedReview.forBranch': HostedReviewForBranch,
   'hostedReview.getCreationEligibility': HostedReviewCreationEligibility,
   'itsaplan.addComment': ItsaplanAddCommentParams,
+  'itsaplan.cancelConnect': null,
   'itsaplan.connect': ItsaplanConnectParams,
   'itsaplan.createIssue': ItsaplanCreateParams,
   'itsaplan.disconnect': ItsaplanScopeParams,

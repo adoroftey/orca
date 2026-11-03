@@ -47,12 +47,17 @@ function validated<T>(schema: ZodType<T>, value: unknown): T {
 
 export function createItsaplanHttpClient(options: {
   baseUrl: string
-  apiKey: string
+  apiKey?: string
+  transport?: (
+    path: string,
+    method: string,
+    body?: unknown
+  ) => Promise<{ status: number; data: unknown }>
   fetch?: typeof fetch
 }) {
   const baseUrl = normalizeItsaplanServerUrl(options.baseUrl)
-  const apiKey = options.apiKey.trim()
-  if (!apiKey || /[\r\n]/.test(apiKey)) {
+  const apiKey = options.apiKey?.trim() ?? ''
+  if (!options.transport && (!apiKey || /[\r\n]/.test(apiKey))) {
     throw new Error('Enter a valid Itsaplan API key.')
   }
   const fetchRequest = options.fetch ?? globalThis.fetch
@@ -62,6 +67,21 @@ export function createItsaplanHttpClient(options: {
     method = 'GET',
     body?: unknown
   ): Promise<T> => {
+    if (options.transport) {
+      const result = await options.transport(path, method, body)
+      if (result.status < 200 || result.status >= 300) {
+        throw new Error(
+          result.status === 401 || result.status === 403
+            ? `Itsaplan denied access (HTTP ${result.status}). Check MCP and project permissions.`
+            : `Itsaplan request failed (HTTP ${result.status}).`
+        )
+      }
+      const parsed = schema.safeParse(result.status === 204 ? undefined : result.data)
+      if (!parsed.success) {
+        throw new Error('Itsaplan returned an invalid or oversized response.')
+      }
+      return parsed.data
+    }
     let response: Response
     try {
       response = await fetchRequest(`${baseUrl}${path}`, {
@@ -82,7 +102,7 @@ export function createItsaplanHttpClient(options: {
       await response.body?.cancel().catch(() => {})
       throw new Error(
         response.status === 401 || response.status === 403
-          ? 'Itsaplan denied access. Check your API key and project permissions.'
+          ? 'Itsaplan denied access. Check your account and project permissions.'
           : `Itsaplan request failed (HTTP ${response.status}).`
       )
     }

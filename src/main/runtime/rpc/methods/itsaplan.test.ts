@@ -49,3 +49,28 @@ describe('itsaplan planning RPC', () => {
     ).toBe(false)
   })
 })
+
+describe('local-only OAuth fence', () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  it('rejects OAuth connect before dispatch', async () => {
+    const method = ITSAPLAN_METHODS.find((entry) => entry.name === 'itsaplan.connect')!
+    await expect(async () =>
+      method.handler(
+        // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: This intentionally exercises runtime rejection of a remote OAuth request.
+        { baseUrl: 'https://example.com', authMethod: 'oauth' } as never,
+        unusedContext
+      )
+    ).rejects.toThrow('local desktop')
+    expect(dispatchItsaplanRequest).not.toHaveBeenCalled()
+  })
+
+  it('rejects remote cancellation before dispatch', async () => {
+    const method = ITSAPLAN_METHODS.find((entry) => entry.name === 'itsaplan.cancelConnect')!
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: This intentionally exercises runtime rejection of remote cancellation.
+    await expect(async () => method.handler(undefined as never, unusedContext)).rejects.toThrow(
+      'local desktop'
+    )
+    expect(dispatchItsaplanRequest).not.toHaveBeenCalled()
+  })
+})

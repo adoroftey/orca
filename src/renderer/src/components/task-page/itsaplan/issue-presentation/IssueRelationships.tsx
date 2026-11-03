@@ -99,9 +99,13 @@ export function IssueRelationships({
           </button>
           {!collapsed && (
             <div className="space-y-1">
-              {(allChildren ? children : children.slice(0, 3)).map((child) => (
-                <div key={child.id}>{row(child.id, child)}</div>
-              ))}
+              <ul className="divide-y divide-border">
+                {(allChildren ? children : children.slice(0, 3)).map((child) => (
+                  <li key={child.id} className="py-1">
+                    {row(child.id, child)}
+                  </li>
+                ))}
+              </ul>
               {children.length > 3 && (
                 <button
                   type="button"
@@ -130,11 +134,13 @@ export function IssueRelationships({
             </button>
             {expandedLinks[key] && (
               <div className="space-y-1">
-                {(allLinks[key] ? links : links.slice(0, 3)).map((link) => (
-                  <div key={link.key}>
-                    {row(link.id, allIssues.find((item) => item.id === link.id) ?? link.target)}
-                  </div>
-                ))}
+                <ul className="divide-y divide-border">
+                  {(allLinks[key] ? links : links.slice(0, 3)).map((link) => (
+                    <li key={link.key} className="py-1">
+                      {row(link.id, allIssues.find((item) => item.id === link.id) ?? link.target)}
+                    </li>
+                  ))}
+                </ul>
                 {links.length > 3 && (
                   <button
                     type="button"

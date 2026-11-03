@@ -121,9 +121,13 @@ export type ItsaplanConnectionStatus = {
   connected: boolean
   baseUrl: string | null
   webBaseUrl: string | null
+  authMethod?: 'apiKey' | 'oauth'
 }
 
-export type ItsaplanConnectArgs = { baseUrl: string; webBaseUrl?: string; apiKey: string }
+export type ItsaplanConnectArgs = { baseUrl: string; webBaseUrl?: string } & (
+  | { apiKey: string; authMethod?: 'apiKey' }
+  | { authMethod: 'oauth' }
+)
 
 export type ItsaplanRestApi = {
   planning?: ItsaplanPlanningApi
@@ -141,6 +145,7 @@ export type ItsaplanRestApi = {
 export type ItsaplanApi = ItsaplanRestApi & {
   status(): Promise<ItsaplanConnectionStatus>
   connect(args: ItsaplanConnectArgs): Promise<ItsaplanConnectionStatus>
+  cancelConnect?(): Promise<void>
   disconnect(): Promise<void>
 }
 

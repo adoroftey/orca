@@ -36,6 +36,7 @@ function apiFixture() {
     status: vi.fn().mockResolvedValue(connection),
     connect: vi.fn().mockResolvedValue(connection),
     disconnect: vi.fn().mockResolvedValue(undefined),
+    cancelConnect: vi.fn().mockResolvedValue(undefined),
     listProjects: vi.fn().mockResolvedValue(projects),
     getProject: vi.fn().mockImplementation((ref) =>
       Promise.resolve({
@@ -82,6 +83,8 @@ it('connects from the native disconnected screen without persisting the key in U
   fireEvent.change(screen.getByLabelText('Web URL (optional)'), {
     target: { value: 'https://plan.test' }
   })
+  fireEvent.click(screen.getByText('Advanced: API key'))
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument())
   fireEvent.change(screen.getByLabelText('API key'), { target: { value: 'secret-test-key' } })
   fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
   await screen.findByRole('button', { name: 'APP-3 Fix checkout' })
@@ -92,6 +95,38 @@ it('connects from the native disconnected screen without persisting the key in U
   })
   expect(JSON.stringify(localStorage)).not.toContain('secret-test-key')
   expect(screen.queryByLabelText('API key')).toBeNull()
+})
+
+it('starts OAuth by default and lets the user cancel pending sign-in', async () => {
+  const api = apiFixture()
+  api.status.mockResolvedValueOnce({ connected: false, baseUrl: null, webBaseUrl: null })
+  api.connect.mockImplementationOnce(() => new Promise(() => {}))
+  render(<ItsaplanTasks api={api} hostKey="local" onUseIssue={vi.fn()} />)
+  fireEvent.change(await screen.findByLabelText('API URL'), {
+    target: { value: 'https://api.plan.test' }
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Sign in via browser' }))
+  expect(api.connect).toHaveBeenCalledWith({
+    baseUrl: 'https://api.plan.test',
+    authMethod: 'oauth'
+  })
+  expect(await screen.findByText('Waiting for sign-in in your browser…')).toBeInTheDocument()
+  const advanced = screen.getByText('Advanced: API key')
+  fireEvent.click(advanced)
+  expect(screen.getByLabelText('API key')).toBeDisabled()
+  expect(screen.getByText('Waiting for sign-in in your browser…')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel sign-in' }))
+  expect(api.cancelConnect).toHaveBeenCalledOnce()
+})
+
+it('uses account-neutral guidance when an OAuth account has no projects', async () => {
+  const api = apiFixture()
+  api.status.mockResolvedValueOnce({ ...connection, authMethod: 'oauth' })
+  api.listProjects.mockResolvedValueOnce([])
+  render(<ItsaplanTasks api={api} hostKey="local" onUseIssue={vi.fn()} />)
+  expect(
+    await screen.findByText('No accessible projects. Check your account and project permissions.')
+  ).toBeInTheDocument()
 })
 
 it('loads full issue context before editing, commenting and starting a workspace', async () => {
@@ -261,6 +296,8 @@ it('clears the old server project when connection succeeds but its project list 
   fireEvent.change(screen.getByLabelText('API URL'), {
     target: { value: 'https://other-api.plan.test' }
   })
+  fireEvent.click(screen.getByText('Advanced: API key'))
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument())
   fireEvent.change(screen.getByLabelText('API key'), { target: { value: 'new-key' } })
   fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
   await screen.findByText('Project access denied')

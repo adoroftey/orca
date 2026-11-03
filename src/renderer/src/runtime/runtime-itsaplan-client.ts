@@ -29,6 +29,16 @@ export function createItsaplanRuntimeClient(
   }
   return createItsaplanScopedTransportApi(
     async <T>(method: string, params?: unknown): Promise<T> => {
+      if (
+        method === 'cancelConnect' ||
+        (method === 'connect' &&
+          typeof params === 'object' &&
+          params !== null &&
+          'authMethod' in params &&
+          params.authMethod === 'oauth')
+      ) {
+        throw new Error('OAuth sign-in is available only on the local desktop.')
+      }
       await assertRuntimeEnvironmentCapability(
         target.environmentId,
         method === 'planning' ? ITSAPLAN_PLANNING_RUNTIME_CAPABILITY : ITSAPLAN_RUNTIME_CAPABILITY,

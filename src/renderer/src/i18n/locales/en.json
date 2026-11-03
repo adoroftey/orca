@@ -23660,6 +23660,10 @@
       "webUrl": "Web URL (optional)",
       "webUrlPlaceholder": "https://plan.example.com",
       "apiKey": "API key",
+      "advanced": "Advanced: API key",
+      "waiting": "Waiting for sign-in in your browser…",
+      "browser": "Sign in via browser",
+      "cancelSignIn": "Cancel sign-in",
       "connecting": "Connecting…",
       "connect": "Connect"
     },
@@ -23732,7 +23736,8 @@
     "project": {
       "label": "Project",
       "loading": "Loading projects…",
-      "empty": "No accessible projects. Check this API key’s project access."
+      "empty": "No accessible projects. Check this API key’s project access.",
+      "emptyAccount": "No accessible projects. Check your account and project permissions."
     },
     "refresh": "Refresh",
     "filters": {

@@ -36,6 +36,7 @@ export function createItsaplanTransportApi(call: ItsaplanCaller): ItsaplanApi {
     },
     status: () => call('status'),
     connect: (params) => call('connect', params),
+    cancelConnect: () => call('cancelConnect'),
     disconnect: () => call('disconnect'),
     listProjects: () => call('listProjects'),
     getProject: (projectRef) => call('getProject', { projectRef }),
@@ -72,6 +73,7 @@ export function createItsaplanScopedTransportApi(call: ItsaplanCaller): Itsaplan
   return {
     ...api,
     status: () => rememberConnection('status'),
-    connect: (params) => rememberConnection('connect', params)
+    connect: (params) => rememberConnection('connect', params),
+    cancelConnect: () => call('cancelConnect')
   }
 }

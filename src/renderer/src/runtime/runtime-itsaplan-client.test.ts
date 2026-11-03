@@ -50,6 +50,23 @@ describe('Itsaplan host-scoped runtime client', () => {
     )
   })
 
+  it('rejects remote OAuth and cancellation before capability checks or RPC', async () => {
+    const api = createItsaplanRuntimeClient({ kind: 'environment', environmentId: 'host-2' })
+    await expect(
+      api.connect({ baseUrl: 'https://api.plan.example', authMethod: 'oauth' })
+    ).rejects.toThrow('local desktop')
+    await expect(api.cancelConnect?.()).rejects.toThrow('local desktop')
+    expect(assertCapability).not.toHaveBeenCalled()
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+
+  it('routes local cancellation before connection discovery', async () => {
+    const api = createItsaplanRuntimeClient({ kind: 'local' })
+    localRequest.mockResolvedValue(undefined)
+    await api.cancelConnect?.()
+    expect(localRequest).toHaveBeenCalledWith('cancelConnect')
+  })
+
   it('does not fall back to local credentials when a remote host lacks support', async () => {
     assertCapability.mockRejectedValue(new Error('Update the remote host'))
     const api = createItsaplanRuntimeClient({ kind: 'environment', environmentId: 'older-host' })

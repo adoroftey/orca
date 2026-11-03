@@ -115,6 +115,13 @@ function ItsaplanHostTasks({ api, hostKey, ...workspaceActions }: Props) {
           busy={busy}
           error={error}
           onConnect={connect}
+          onCancelSignIn={() => {
+            void api.cancelConnect?.().catch((failure) => {
+              if (alive.current) {
+                setError(itsaplanErrorMessage(failure))
+              }
+            })
+          }}
           onCancel={
             connection?.connected
               ? () => {
@@ -209,8 +216,8 @@ function ItsaplanHostTasks({ api, hostKey, ...workspaceActions }: Props) {
           ) : !error ? (
             <p className="p-6 text-sm text-muted-foreground">
               {translate(
-                'itsaplan.project.empty',
-                'No accessible projects. Check this API key’s project access.'
+                'itsaplan.project.emptyAccount',
+                'No accessible projects. Check your account and project permissions.'
               )}{' '}
               <Button variant="outline" size="sm" onClick={() => setRetry((value) => value + 1)}>
                 {translate('itsaplan.retry', 'Retry')}

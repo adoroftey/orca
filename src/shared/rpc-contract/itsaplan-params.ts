@@ -35,6 +35,7 @@ export const ItsaplanAddCommentParams = ItsaplanIssueParams.extend({
 export const ItsaplanRequestParams = z.discriminatedUnion('method', [
   z.object({ method: z.literal('planning'), params: ItsaplanPlanningParams }).strict(),
   z.object({ method: z.literal('status') }).strict(),
+  z.object({ method: z.literal('cancelConnect') }).strict(),
   z.object({ method: z.literal('connect'), params: ItsaplanConnectParams }).strict(),
   z.object({ method: z.literal('disconnect'), params: ItsaplanScopeParams }).strict(),
   z.object({ method: z.literal('listProjects'), params: ItsaplanScopeParams }).strict(),

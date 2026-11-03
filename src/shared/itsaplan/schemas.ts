@@ -160,15 +160,19 @@ export const ItsaplanCommentPageSchema = z
   })
   .passthrough()
 
-export const ItsaplanConnectSchema = z
-  .object({
-    baseUrl: z.string().min(1).max(2_048),
-    webBaseUrl: z.string().max(2_048).optional(),
+const ItsaplanConnectBase = z.object({
+  baseUrl: z.string().min(1).max(2_048),
+  webBaseUrl: z.string().max(2_048).optional()
+})
+export const ItsaplanConnectSchema = z.union([
+  ItsaplanConnectBase.extend({ authMethod: z.literal('oauth') }).strict(),
+  ItsaplanConnectBase.extend({
+    authMethod: z.literal('apiKey').optional(),
     apiKey: z
       .string()
       .trim()
       .min(1)
       .max(16_384)
       .refine((value) => !/[\r\n]/.test(value))
-  })
-  .strict()
+  }).strict()
+])

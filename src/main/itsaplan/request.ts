@@ -13,6 +13,8 @@ export async function dispatchItsaplanRequest(input: unknown): Promise<unknown> 
       return dispatchPlanningRequest(request.params)
     case 'status':
       return itsaplanConnection.status()
+    case 'cancelConnect':
+      return itsaplanConnection.cancelConnect?.()
     case 'connect':
       return itsaplanConnection.connect(request.params)
     case 'disconnect':

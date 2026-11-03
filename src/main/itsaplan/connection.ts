@@ -1,7 +1,7 @@
 import { createPlanningFacade } from './planning-support'
 import { mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { z } from 'zod'
+import type { z } from 'zod'
 import { getSecretStore, type SecretStore } from '../../shared/secret-store'
 import type {
   ItsaplanApi,
@@ -11,6 +11,10 @@ import type {
 import { ItsaplanConnectSchema } from '../../shared/itsaplan/schemas'
 import { writeCredentialFileAtomic } from '../credentials/integration-credential-file'
 import { createItsaplanClient } from './client'
+import { authorizeItsaplanOAuth, refreshItsaplanOAuth } from './oauth'
+import { createItsaplanOAuthTransport } from './oauth-transport'
+import type { OAuthSession } from './oauth-storage-schema'
+import { StoredConnection } from './oauth-storage-schema'
 import { normalizeItsaplanServerUrl } from './server-url'
 import { readProfileIndex } from '../orca-profiles/profile-index-store'
 import {
@@ -31,24 +35,19 @@ type ItsaplanConnection = Omit<ItsaplanApi, 'disconnect'> & {
   disconnect(expectedBaseUrl?: string): Promise<void>
 }
 
-const StoredConnection = z
-  .object({
-    baseUrl: z.string(),
-    webBaseUrl: z.string(),
-    apiKey: z.string().min(1)
-  })
-  .strict()
-
 export function createItsaplanConnection(
   options: {
     filePath?: () => string
     fetch?: typeof fetch
     secretStore?: () => SecretStore
+    openExternal?: (url: string) => Promise<void>
   } = {}
 ): ItsaplanConnection {
   const filePath = options.filePath ?? getItsaplanConnectionFile
   const secretStore = options.secretStore ?? getSecretStore
   let generation = 0
+  let activeFlow: { controller: AbortController; destination: string } | undefined
+  const refreshFlights = new Map<string, Promise<z.infer<typeof OAuthSession>>>()
   const read = () => {
     let bytes: Buffer
     try {
@@ -79,7 +78,12 @@ export function createItsaplanConnection(
   const status = (): ItsaplanConnectionStatus => {
     const record = read()
     return record
-      ? { connected: true, baseUrl: record.baseUrl, webBaseUrl: record.webBaseUrl }
+      ? {
+          connected: true,
+          baseUrl: record.baseUrl,
+          webBaseUrl: record.webBaseUrl,
+          ...('auth' in record ? { authMethod: 'oauth' as const } : {})
+        }
       : { connected: false, baseUrl: null, webBaseUrl: null }
   }
   const client = (expectedBaseUrl?: string) => {
@@ -89,6 +93,82 @@ export function createItsaplanConnection(
     }
     if (expectedBaseUrl !== undefined && record.baseUrl !== expectedBaseUrl) {
       throw new Error('The Itsaplan server changed. Refresh Tasks before continuing.')
+    }
+    if ('auth' in record) {
+      const destination = filePath()
+      const version = generation
+      const identity = record.auth.session
+      const getCredential = async (force = false) => {
+        const current = read()
+        if (
+          !current ||
+          !('auth' in current) ||
+          filePath() !== destination ||
+          generation !== version ||
+          current.auth.session.issuer !== identity.issuer ||
+          current.auth.session.clientId !== identity.clientId
+        ) {
+          throw new Error('The Itsaplan connection changed.')
+        }
+        if (!force && current.auth.session.expiresAt > Date.now() + 30_000) {
+          return current.auth.session
+        }
+        const refreshKey = JSON.stringify([
+          destination,
+          version,
+          identity.issuer,
+          identity.clientId
+        ])
+        let refreshFlight = refreshFlights.get(refreshKey)
+        if (!refreshFlight) {
+          refreshFlight = (async () => {
+            const original = current.auth.session
+            const next = await refreshItsaplanOAuth(original, { fetch: options.fetch })
+            const latest = read()
+            if (
+              filePath() !== destination ||
+              generation !== version ||
+              !latest ||
+              !('auth' in latest) ||
+              latest.auth.session.issuer !== original.issuer ||
+              latest.auth.session.clientId !== original.clientId ||
+              latest.auth.session.refreshToken !== original.refreshToken ||
+              latest.auth.session.accessToken !== original.accessToken
+            ) {
+              throw new Error('The Itsaplan connection changed.')
+            }
+            const store = secretStore()
+            if (!store.isEncryptionAvailable() || store.describeProtectionGap() !== null) {
+              throw new Error('Secure credential storage is unavailable.')
+            }
+            writeCredentialFileAtomic(
+              destination,
+              store.encryptString(
+                JSON.stringify({ ...latest, auth: { type: 'oauth', session: next } })
+              ),
+              () => generation === version && filePath() === destination,
+              true
+            )
+            return next
+          })().finally(() => {
+            refreshFlights.delete(refreshKey)
+          })
+          refreshFlights.set(refreshKey, refreshFlight)
+        }
+        const refreshed = await refreshFlight
+        if (filePath() !== destination || generation !== version) {
+          throw new Error('The Itsaplan connection changed.')
+        }
+        return refreshed
+      }
+      return createItsaplanClient({
+        baseUrl: record.baseUrl,
+        transport: createItsaplanOAuthTransport({
+          baseUrl: record.baseUrl,
+          getCredential,
+          fetch: options.fetch
+        })
+      })
     }
     return createItsaplanClient({ ...record, fetch: options.fetch })
   }
@@ -120,18 +200,53 @@ export function createItsaplanConnection(
     connect: async (args) => {
       const parsed = ItsaplanConnectSchema.safeParse(args)
       if (!parsed.success) {
-        throw new Error('Enter a valid Itsaplan server address and API key.')
+        throw new Error('Enter valid Itsaplan connection details.')
       }
       const version = ++generation
       const destination = filePath()
-      const record = {
-        baseUrl: normalizeItsaplanServerUrl(parsed.data.baseUrl),
-        webBaseUrl: normalizeItsaplanServerUrl(
-          parsed.data.webBaseUrl?.trim() || parsed.data.baseUrl
-        ),
-        apiKey: parsed.data.apiKey
+      activeFlow?.controller.abort()
+      const baseUrl = normalizeItsaplanServerUrl(parsed.data.baseUrl)
+      const webBaseUrl = normalizeItsaplanServerUrl(
+        parsed.data.webBaseUrl?.trim() || parsed.data.baseUrl
+      )
+      let record: z.infer<typeof StoredConnection>
+      if (parsed.data.authMethod === 'oauth') {
+        const controller = new AbortController()
+        activeFlow = { controller, destination }
+        try {
+          const session = await authorizeItsaplanOAuth({
+            baseUrl,
+            fetch: options.fetch,
+            signal: controller.signal,
+            openExternal:
+              options.openExternal ??
+              (async (url) => {
+                const { shell } = await import('electron')
+                await shell.openExternal(url)
+              })
+          })
+          await createItsaplanClient({
+            baseUrl,
+            transport: createItsaplanOAuthTransport({
+              baseUrl,
+              getCredential: async () => session,
+              fetch: options.fetch,
+              signal: controller.signal
+            })
+          }).listProjects()
+          if (controller.signal.aborted) {
+            throw new Error('Itsaplan sign-in cancelled.')
+          }
+          record = { baseUrl, webBaseUrl, auth: { type: 'oauth', session } }
+        } finally {
+          if (activeFlow?.controller === controller) {
+            activeFlow = undefined
+          }
+        }
+      } else {
+        record = { baseUrl, webBaseUrl, apiKey: parsed.data.apiKey }
+        await createItsaplanClient({ ...record, fetch: options.fetch }).listProjects()
       }
-      await createItsaplanClient({ ...record, fetch: options.fetch }).listProjects()
       if (version !== generation || destination !== filePath()) {
         throw new Error('The Itsaplan connection changed while connecting. Try again.')
       }
@@ -144,17 +259,36 @@ export function createItsaplanConnection(
       try {
         const encrypted = store.encryptString(JSON.stringify(record))
         mkdirSync(dirname(destination), { recursive: true, mode: 0o700 })
-        writeCredentialFileAtomic(destination, encrypted, () => generation === version, true)
+        writeCredentialFileAtomic(
+          destination,
+          encrypted,
+          () => generation === version && filePath() === destination,
+          true
+        )
       } catch {
         throw new Error('Unable to securely save the Itsaplan connection.')
       }
-      return { connected: true, baseUrl: record.baseUrl, webBaseUrl: record.webBaseUrl }
+      return {
+        connected: true,
+        baseUrl: record.baseUrl,
+        webBaseUrl: record.webBaseUrl,
+        ...('auth' in record ? { authMethod: 'oauth' as const } : {})
+      }
+    },
+    cancelConnect: async () => {
+      if (activeFlow && activeFlow.destination === filePath()) {
+        generation += 1
+        activeFlow.controller.abort()
+        activeFlow = undefined
+      }
     },
     disconnect: async (expectedBaseUrl) => {
       if (expectedBaseUrl !== undefined && read()?.baseUrl !== expectedBaseUrl) {
         throw new Error('The Itsaplan server changed. Refresh Tasks before continuing.')
       }
       generation += 1
+      activeFlow?.controller.abort()
+      activeFlow = undefined
       try {
         rmSync(filePath(), { force: true })
       } catch {

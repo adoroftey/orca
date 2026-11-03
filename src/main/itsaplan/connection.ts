@@ -31,6 +31,7 @@ export function getItsaplanConnectionFile(): string {
 }
 
 type ItsaplanConnection = Omit<ItsaplanApi, 'disconnect'> & {
+  setBrowserOpener(opener: (url: string) => Promise<void>): void
   forServer(baseUrl: string): ItsaplanRestApi
   disconnect(expectedBaseUrl?: string): Promise<void>
 }
@@ -45,6 +46,7 @@ export function createItsaplanConnection(
 ): ItsaplanConnection {
   const filePath = options.filePath ?? getItsaplanConnectionFile
   const secretStore = options.secretStore ?? getSecretStore
+  let browserOpener = options.openExternal
   let generation = 0
   let activeFlow: { controller: AbortController; destination: string } | undefined
   const refreshFlights = new Map<string, Promise<z.infer<typeof OAuthSession>>>()
@@ -195,6 +197,9 @@ export function createItsaplanConnection(
   })
   return {
     ...restApi(),
+    setBrowserOpener: (opener) => {
+      browserOpener = opener
+    },
     forServer: (baseUrl) => restApi(normalizeItsaplanServerUrl(baseUrl)),
     status: async () => status(),
     connect: async (args) => {
@@ -211,6 +216,9 @@ export function createItsaplanConnection(
       )
       let record: z.infer<typeof StoredConnection>
       if (parsed.data.authMethod === 'oauth') {
+        if (!browserOpener) {
+          throw new Error('Itsaplan OAuth requires a browser available in the local desktop app.')
+        }
         const controller = new AbortController()
         activeFlow = { controller, destination }
         try {
@@ -218,12 +226,7 @@ export function createItsaplanConnection(
             baseUrl,
             fetch: options.fetch,
             signal: controller.signal,
-            openExternal:
-              options.openExternal ??
-              (async (url) => {
-                const { shell } = await import('electron')
-                await shell.openExternal(url)
-              })
+            openExternal: browserOpener
           })
           await createItsaplanClient({
             baseUrl,

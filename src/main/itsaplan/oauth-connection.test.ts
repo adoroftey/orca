@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { afterEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { SecretStore } from '../../shared/secret-store'
 
 const mocks = vi.hoisted(() => ({ authorize: vi.fn(), refresh: vi.fn(), transport: vi.fn() }))
@@ -13,10 +13,15 @@ vi.mock('./oauth-transport', () => ({ createItsaplanOAuthTransport: mocks.transp
 import { createItsaplanConnection } from './connection'
 
 const directories: string[] = []
+const fixedTime = 1_700_000_000_000
+beforeEach(() => {
+  vi.spyOn(Date, 'now').mockReturnValue(fixedTime)
+})
 afterEach(() => {
   for (const directory of directories.splice(0)) {
     rmSync(directory, { recursive: true, force: true })
   }
+  vi.restoreAllMocks()
   vi.resetAllMocks()
 })
 const session = {
@@ -26,7 +31,7 @@ const session = {
   clientId: 'client',
   accessToken: 'secret-access',
   refreshToken: 'secret-refresh',
-  expiresAt: Date.now() + 100000
+  expiresAt: fixedTime + 100000
 }
 function fixture() {
   const directory = mkdtempSync(join(tmpdir(), 'orca-oauth-'))

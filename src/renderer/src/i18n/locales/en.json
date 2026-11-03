@@ -23736,7 +23736,6 @@
     "project": {
       "label": "Project",
       "loading": "Loading projects…",
-      "empty": "No accessible projects. Check this API key’s project access.",
       "emptyAccount": "No accessible projects. Check your account and project permissions."
     },
     "refresh": "Refresh",

@@ -143,3 +143,11 @@ describe('Itsaplan connection persistence', () => {
     expect((await connection.status()).connected).toBe(false)
   })
 })
+
+it('rejects headless OAuth before any network request', async () => {
+  const { connection, fetchMock } = fixture()
+  await expect(
+    connection.connect({ baseUrl: 'https://plan.example', authMethod: 'oauth' })
+  ).rejects.toThrow('browser')
+  expect(fetchMock).not.toHaveBeenCalled()
+})

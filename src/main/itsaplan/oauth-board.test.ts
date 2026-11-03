@@ -8,12 +8,16 @@ const session = {
   tokenEndpoint: `${base}/token`,
   clientId: 'client',
   accessToken: 'token',
-  expiresAt: Date.now() + 100000
+  expiresAt: 2_000_000_000_000
 }
 function fixture(count: number) {
   const calls: { name: string; arguments: Record<string, unknown> }[] = []
   let active = 0
   let peak = 0
+  let release!: () => void
+  const parallelReads = new Promise<void>((resolve) => {
+    release = resolve
+  })
   const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
     if (String(input).endsWith('/docs/json')) {
       return Response.json({
@@ -71,7 +75,10 @@ function fixture(count: number) {
       } else {
         active++
         peak = Math.max(peak, active)
-        await new Promise((resolve) => setTimeout(resolve, 5))
+        if (active === Math.min(count, 8)) {
+          release()
+        }
+        await parallelReads
         active--
         const id = rpc.params.arguments.issueId
         const links =

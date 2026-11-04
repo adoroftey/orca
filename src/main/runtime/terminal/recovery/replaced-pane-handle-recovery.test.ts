@@ -1,5 +1,7 @@
 // Recover ended pane handles only to connected replacements bound in the same pane and workspace (L80 P4).
-import { readdirSync, readFileSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -132,24 +134,63 @@ describe('a stale handle of a replaced pane (switch on)', () => {
   })
 })
 
-describe('issuedForPaneKey census', () => {
-  it('is minted by issuePtyHandle, compared by the canonical source and read for recovery', () => {
-    const root = path.resolve(__dirname, '../../../../..')
-    const users: string[] = []
-    const walk = (dir: string): void => {
-      for (const entry of readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, entry.name)
-        if (entry.isDirectory()) {
-          walk(full)
-        } else if (/\.tsx?$/.test(entry.name) && !/\.(test|spec)\.tsx?$/.test(entry.name)) {
-          if (readFileSync(full, 'utf8').includes('issuedForPaneKey')) {
-            users.push(path.relative(root, full))
-          }
-        }
+async function findIssuedForPaneKeyUsers(root: string): Promise<string[]> {
+  const files: string[] = []
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name)
+      if (entry.isDirectory()) {
+        walk(full)
+      } else if (/\.tsx?$/.test(entry.name) && !/\.(test|spec)\.tsx?$/.test(entry.name)) {
+        files.push(full)
       }
     }
-    walk(path.join(root, 'src'))
-    expect(users.sort()).toEqual([
+  }
+  walk(path.join(root, 'src'))
+  const users: string[] = []
+  let next = 0
+  const worker = async (): Promise<void> => {
+    while (next < files.length) {
+      const file = files[next++]
+      if ((await readFile(file, 'utf8')).includes('issuedForPaneKey')) {
+        users.push(path.relative(root, file).split(path.sep).join('/'))
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(16, files.length) }, () => worker()))
+  return users.sort()
+}
+
+describe('issuedForPaneKey census', () => {
+  it('includes untracked nested sources and excludes tests, specs and non-TypeScript files', async () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), 'pane-census-'))
+    try {
+      const src = path.join(root, 'src')
+      mkdirSync(path.join(src, 'nested'), { recursive: true })
+      for (const name of [
+        'nested/untracked.tsx',
+        'ignored.test.ts',
+        'ignored.spec.tsx',
+        'ignored.js'
+      ]) {
+        writeFileSync(path.join(src, name), 'issuedForPaneKey')
+      }
+      writeFileSync(path.join(src, 'no-match.ts'), 'other')
+      expect(await findIssuedForPaneKeyUsers(root)).toEqual(['src/nested/untracked.tsx'])
+      rmSync(path.join(src, 'nested/untracked.tsx'))
+      expect(await findIssuedForPaneKeyUsers(root)).toEqual([])
+      if (process.platform !== 'win32') {
+        symlinkSync(path.join(src, 'missing'), path.join(src, 'broken.ts'))
+        await expect(findIssuedForPaneKeyUsers(root)).rejects.toThrow()
+      }
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it('is minted by issuePtyHandle, compared by the canonical source and read for recovery', async () => {
+    const root = path.resolve(__dirname, '../../../../..')
+    expect(await findIssuedForPaneKeyUsers(root)).toEqual([
       'src/main/runtime/runtime-terminal-contracts.ts',
       'src/main/runtime/terminal/identity/terminal-handle-bindings.ts',
       'src/main/runtime/terminal/identity/terminal-identity-source.ts',

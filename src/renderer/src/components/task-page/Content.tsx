@@ -7,6 +7,7 @@ import { TaskPageGitHubList } from './github/List'
 import { TaskPageGitLabTodoList } from './gitlab/TodoList'
 import { TaskPageGitLabItemList } from './gitlab/ItemList'
 import { TaskPageJiraContent } from './jira/Content'
+import { TaskPageItsaplanContent } from './itsaplan/Content'
 export function TaskPageContent({
   model
 }: {
@@ -73,6 +74,11 @@ export function TaskPageContent({
     <TaskPageGitLabTodoList model={model} />
   ) : taskSource === 'gitlab' ? (
     <TaskPageGitLabItemList model={model} />
+  ) : taskSource === 'itsaplan' ? (
+    <TaskPageItsaplanContent
+      key={`${model.accountBackedTaskSourceHostId}:${model.providerRuntimeContextKey}`}
+      model={model}
+    />
   ) : (
     <TaskPageJiraContent model={model} />
   )

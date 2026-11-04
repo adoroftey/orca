@@ -137,6 +137,9 @@ describe('worktree creation chat handoff', () => {
           <WorkspaceShell />
         </TooltipProvider>
       )
+      await act(async () => {
+        await vi.dynamicImportSettled()
+      })
       const composer = await screen.findByRole('textbox', { name: 'Pending chat message' })
       const sidebar = screen.getByRole('complementary', { name: 'Workspace tools' })
       expect(screen.getByRole('button', { name: 'Cancel worktree creation' })).toBeTruthy()

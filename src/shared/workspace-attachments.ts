@@ -50,7 +50,7 @@ export function workspaceAttachmentReferenceLabel(
   >,
   formats: WorkspaceAttachmentLabelFormats = ENGLISH_ATTACHMENT_LABELS
 ): string {
-  if (item.provider === 'linear' || item.provider === 'jira') {
+  if (item.provider === 'linear' || item.provider === 'jira' || item.provider === 'itsaplan') {
     return item.identifier ?? item.linearIdentifier ?? item.jiraIdentifier ?? `#${item.number}`
   }
   return formats[item.type](item.number)

@@ -8504,7 +8504,6 @@
           "incompleteBannerTitle": "表示中の一部のプロバイダーは設定が必要です",
           "incompleteBannerBody": "使用しないプロバイダーを非表示にするか、カードを展開して手順を完了してください。",
           "providersDescription": "各カードで接続、タスクへの表示、Linear の場合はスキル設定を進められます。",
-          "integrationsHint": "すべてのプロバイダーの認証情報は次の場所でも管理できます：",
           "integrationsLink": "連携",
           "skillHint": "。Linear の接続後、使用例は設定 → Linear で確認できます。",
           "incompleteBannerBodyWithLinear": "使用しないプロバイダーを非表示にするか、カードを展開して手順を完了してください。Linear では API アクセス、Agent スキル、タスクへの表示が必要です。"

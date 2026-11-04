@@ -1,3 +1,4 @@
+import type { LinkedWorkItemContext } from '@/lib/linked-work-item-context'
 import type {
   AgentSubjectRead,
   AgentSubjectReadIntent
@@ -86,11 +87,13 @@ export type NewWorkspaceDraft = {
   note: string
   attachments: string[]
   linkedWorkItem: {
-    provider?: 'github' | 'gitlab' | 'linear' | 'jira'
+    provider?: 'github' | 'gitlab' | 'linear' | 'jira' | 'itsaplan'
     type: 'issue' | 'pr' | 'mr'
     number: number
     title: string
     url: string
+    identifier?: string
+    linkedContext?: LinkedWorkItemContext
     linearIdentifier?: string
     linearBranchName?: string
     jiraIdentifier?: string

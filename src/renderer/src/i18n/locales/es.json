@@ -8751,7 +8751,6 @@
           "incompleteBannerTitle": "Algunos proveedores visibles aún necesitan configuración",
           "incompleteBannerBody": "Oculta los proveedores que no uses o expande una tarjeta y completa sus pasos.",
           "providersDescription": "Cada tarjeta guía la conexión (y la habilidad, en Linear) y si aparece en Tareas.",
-          "integrationsHint": "Las credenciales de todos los proveedores también están en",
           "integrationsLink": "Integraciones",
           "skillHint": ". Después de conectar Linear, los ejemplos de uso están en Ajustes → Linear.",
           "incompleteBannerBodyWithLinear": "Oculta los proveedores que no uses o expande una tarjeta y completa sus pasos. Para Linear: acceso a la API, la habilidad del agente y Mostrar en Tareas."

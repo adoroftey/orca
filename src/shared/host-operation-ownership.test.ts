@@ -31,6 +31,21 @@ describe('getHostOperationOwnership', () => {
     expect(getHostOperationOwnership('github.project.updateItemField')).toBe('credential')
   })
 
+  it('routes Itsaplan operations to the explicitly selected scope like Linear and Jira', () => {
+    const methods = [
+      'linear.listIssues',
+      'jira.getIssueStream',
+      'itsaplan.connect',
+      'itsaplan.listProjects',
+      'itsaplan.getIssue',
+      'itsaplan.createIssue',
+      'itsaplan.planning'
+    ]
+    expect(methods.map((method) => getHostOperationOwnership(method))).toEqual(
+      methods.map(() => 'scope-picked')
+    )
+  })
+
   it('keeps client effects client and returns null for unknown names', () => {
     expect(getHostOperationOwnership('shell.openPath')).toBe('client')
     expect(getHostOperationOwnership('nope.call')).toBeNull()

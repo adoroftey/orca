@@ -68,6 +68,7 @@ export function toFolderWorkspaceLinkedTask(
     number: item.number,
     title: item.title,
     url: item.url,
+    ...(item.identifier ? { identifier: item.identifier } : {}),
     ...(item.linearIdentifier ? { linearIdentifier: item.linearIdentifier } : {}),
     ...(item.jiraIdentifier ? { jiraIdentifier: item.jiraIdentifier } : {}),
     ...(item.repoId ? { repoId: item.repoId } : {})

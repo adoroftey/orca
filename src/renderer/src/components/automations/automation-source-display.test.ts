@@ -76,6 +76,27 @@ describe('automation source display', () => {
     })
   })
 
+  it('names the self-hosted Itsaplan server and project independently of its execution host', () => {
+    const sourceContext: TaskSourceContext = {
+      kind: 'task-source',
+      provider: 'itsaplan',
+      projectId: 'orca',
+      hostId: 'local',
+      providerIdentity: {
+        provider: 'itsaplan',
+        baseUrl: 'https://api.plan.example',
+        projectRef: 'team.ORCA'
+      }
+    }
+    expect(
+      getAutomationSourceDisplay(sourceContext, new Map([['local', 'Local test host']]))
+    ).toEqual({
+      label: "It's a Plan · Local test host · https://api.plan.example · team.ORCA",
+      title:
+        "It's a Plan source · Host: Local test host · Source: https://api.plan.example · team.ORCA"
+    })
+  })
+
   it('returns null when no source context is saved', () => {
     expect(getAutomationSourceDisplay(null)).toBeNull()
   })

@@ -9131,7 +9131,6 @@
           "incompleteBannerTitle": "Bazı görünür sağlayıcılar hâlâ kurulum bekliyor",
           "incompleteBannerBody": "Kullanmadığınız sağlayıcıları gizleyin veya bir kartı genişletip adımlarını tamamlayın.",
           "providersDescription": "Her kart bağlantı adımlarını (ve Linear için beceriyi) ve Görevler'de görünüp görünmediğini gösterir.",
-          "integrationsHint": "Tüm sağlayıcıların kimlik bilgileri de şurada bulunur:",
           "integrationsLink": "Entegrasyonlar",
           "skillHint": ". Linear bağlandıktan sonra kullanım örnekleri Ayarlar → Linear altında kalır.",
           "incompleteBannerBodyWithLinear": "Kullanmadığınız sağlayıcıları gizleyin veya bir kartı genişletip adımlarını tamamlayın. Linear için: API erişimi, ajan becerisi ve Görevler'de Göster."

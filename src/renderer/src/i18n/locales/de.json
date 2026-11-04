@@ -9145,7 +9145,6 @@
           "incompleteBannerTitle": "Einige sichtbare Anbieter müssen noch eingerichtet werden",
           "incompleteBannerBody": "Nicht verwendete Anbieter ausblenden oder eine Karte aufklappen und die Einrichtungsschritte abschließen.",
           "providersDescription": "Jede Karte führt durch die Einrichtung der Verbindung und bei Linear auch des Skills. Dort lässt sich außerdem festlegen, ob der Anbieter unter „Aufgaben“ erscheint.",
-          "integrationsHint": "Zugangsdaten für alle Anbieter befinden sich auch unter",
           "integrationsLink": "Integrationen",
           "skillHint": ". Nach dem Verbinden von Linear bleiben Nutzungsbeispiele unter Einstellungen → Linear verfügbar.",
           "incompleteBannerBodyWithLinear": "Nicht verwendete Anbieter ausblenden oder eine Karte aufklappen und die Einrichtungsschritte abschließen. Für Linear: API-Zugriff, Agenten-Skill und „In Aufgaben anzeigen“."

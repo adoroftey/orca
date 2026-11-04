@@ -1,3 +1,4 @@
+import { useItsaplanProviderStatus } from './use-itsaplan-provider-status'
 import { useMemo } from 'react'
 import type { TaskProvider } from '../../../../shared/task-providers'
 import {
@@ -8,7 +9,8 @@ import { useActiveProjectSkillRuntime } from '@/hooks/useActiveProjectSkillRunti
 import { useLinearProviderConnected } from '@/hooks/useLinearProviderConnected'
 import { LINEAR_AGENT_SKILL_NAMES } from '@/lib/agent-feature-skill-names'
 import { getLocalPreflightContext, localPreflightContextKey } from '@/lib/local-preflight-context'
-import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
+import { getEnvironmentRuntimeContextKey } from '@/lib/provider-runtime-context'
+import { defaultScopeHost } from '@/lib/default-creation-host'
 import { useAppStore } from '@/store'
 import type { TaskProviderReadiness } from './task-source-setup-state'
 
@@ -30,7 +32,11 @@ export function useTaskSourceProviderReadiness(
   const linearConnected = useLinearProviderConnected()
   const linearStatusChecked = useAppStore((s) => s.linearStatusChecked)
   const linearStatusContextKey = useAppStore((s) => s.linearStatusContextKey)
-  const providerRuntimeContextKey = getProviderRuntimeContextKey(settings)
+  const scopeTarget = useMemo(() => defaultScopeHost(settings), [settings])
+  const providerRuntimeContextKey = getEnvironmentRuntimeContextKey(
+    scopeTarget.kind === 'environment' ? scopeTarget.environmentId : null
+  )
+  const itsaplanStatus = useItsaplanProviderStatus(scopeTarget, providerRuntimeContextKey)
   const activeSkillRuntime = useActiveProjectSkillRuntime()
 
   const {
@@ -86,6 +92,10 @@ export function useTaskSourceProviderReadiness(
         skillUnverifiable: linearSkillUnverifiable,
         visible: visible.has('linear')
       },
+      itsaplan: {
+        ...itsaplanStatus,
+        visible: visible.has('itsaplan')
+      },
       jira: {
         connected: jiraConnected,
         checking: jiraChecking,
@@ -93,6 +103,7 @@ export function useTaskSourceProviderReadiness(
       }
     }
   }, [
+    itsaplanStatus,
     githubConnected,
     gitlabConnected,
     jiraChecking,

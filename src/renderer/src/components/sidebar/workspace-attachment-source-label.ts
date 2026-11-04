@@ -39,6 +39,12 @@ function urlLabel(value: string | null | undefined): string | null {
 export function getWorkspaceAttachmentSourceLabel(item: WorkspaceAttachment): string | null {
   const source = item.taskSourceContext?.provider === item.provider ? item.taskSourceContext : null
   const identity = source?.providerIdentity
+  if (item.provider === 'itsaplan') {
+    return joinSourceParts(
+      identity?.provider === 'itsaplan' ? urlLabel(identity.baseUrl) : null,
+      identity?.provider === 'itsaplan' ? identity.projectRef : null
+    )
+  }
   if (item.provider === 'linear') {
     const organization =
       item.linearOrganizationUrlKey ??

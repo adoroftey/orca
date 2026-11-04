@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Github, Gitlab } from 'lucide-react'
+import { Github, Gitlab, ListTodo } from 'lucide-react'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { TaskProvider } from '../../../../shared/task-providers'
 import {
@@ -78,6 +78,18 @@ const PROVIDER_META: Record<
     },
     Icon: ({ className }) => <LinearIcon className={className} />
   },
+  itsaplan: {
+    get label() {
+      return translate('itsaplan.provider.name', "It's a Plan")
+    },
+    get description() {
+      return translate(
+        'itsaplan.settings.description',
+        'Connect your self-hosted task tracker and start workspaces from issues.'
+      )
+    },
+    Icon: ({ className }) => <ListTodo className={className} />
+  },
   jira: {
     get label() {
       return translate('auto.components.settings.TasksPane.6b23a34f6d', 'Jira')
@@ -94,6 +106,7 @@ const PROVIDER_META: Record<
 
 export function TasksPane({ settings, updateSettings }: TasksPaneProps): React.JSX.Element {
   const visibleProviders = normalizeVisibleTaskProviders(settings.visibleTaskProviders)
+  const openTaskPage = useAppStore((s) => s.openTaskPage)
   const openSettingsPage = useAppStore((s) => s.openSettingsPage)
   const openSettingsTarget = useAppStore((s) => s.openSettingsTarget)
   const checkJiraConnection = useAppStore((s) => s.checkJiraConnection)
@@ -203,7 +216,15 @@ export function TasksPane({ settings, updateSettings }: TasksPaneProps): React.J
                 defaultExpanded={autoExpandedProvider === provider}
                 onToggleVisible={() => toggleProvider(provider)}
               >
-                {provider === 'linear' ? (
+                {provider === 'itsaplan' ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openTaskPage({ taskSource: 'itsaplan' })}
+                  >
+                    {translate('itsaplan.settings.openTasks', "Open It's a Plan in Tasks")}
+                  </Button>
+                ) : provider === 'linear' ? (
                   <TaskSourceLinearSetup
                     connected={readiness.connected}
                     checking={readiness.checking}
@@ -244,8 +265,8 @@ export function TasksPane({ settings, updateSettings }: TasksPaneProps): React.J
 
         <p className="text-xs text-muted-foreground">
           {translate(
-            'auto.components.settings.TasksPane.integrationsHint',
-            'Credentials for all providers also live under'
+            'itsaplan.settings.otherCredentials',
+            'Manage other provider credentials under'
           )}{' '}
           <Button
             type="button"

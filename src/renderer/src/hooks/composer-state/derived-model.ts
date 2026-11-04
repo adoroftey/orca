@@ -4,6 +4,7 @@ import type { SparsePreset } from '../../../../shared/worktree/create-types'
 import type { RetiredNameRegistry } from '../../../../shared/worktree/retired-name-registry'
 import type { GitHubLinkQuery } from '@/lib/github-links'
 import type { SetupConfig } from '../../../../shared/orca-hook-setup-config'
+import type { WorkspaceSourceProvider } from '../../../../shared/new-workspace/workspace-source'
 
 export type ComposerDerivedModel = {
   sparsePresetsForRepo: SparsePreset[]
@@ -16,7 +17,7 @@ export type ComposerDerivedModel = {
   currentYamlHooks: OrcaHooks | null
   setupConfig: SetupConfig | null
   setupPolicy: SetupRunPolicy
-  linkedWorkItemProvider: 'github' | 'gitlab' | 'linear' | 'jira' | null
+  linkedWorkItemProvider: WorkspaceSourceProvider | null
   requiresExplicitSetupChoice: boolean
   resolvedSetupDecision: 'skip' | 'run' | null
   isSetupCheckPending: boolean

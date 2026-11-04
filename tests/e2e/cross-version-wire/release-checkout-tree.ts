@@ -1,12 +1,12 @@
-import { readFile, readdir, rm, writeFile } from 'node:fs/promises'
-import { dirname, join, relative } from 'node:path'
+import { readFile, readdir, rm } from 'node:fs/promises'
+import { join } from 'node:path'
 import { parse } from 'yaml'
-import { createWorkspaceSourceResolver } from '../../../config/scripts/workspace-source-exports.mjs'
+import { installMissingPackageStandIns, type PackageImports } from './release-missing-packages.ts'
+import { withReleaseArchivePruning } from './release-checkout-archive-pruning.ts'
 import {
-  collectPackageImports,
-  installMissingPackageStandIns,
-  type PackageImports
-} from './release-missing-packages.ts'
+  prepareExtractedTree,
+  releaseSourcePreparationRoots
+} from './release-checkout-source-preparation.ts'
 
 const CHECKOUT_PROCESS_TIMEOUT_MS = 45_000
 const CHECKOUT_MAX_OUTPUT_BYTES = 1024 * 1024
@@ -41,117 +41,6 @@ const OPTIONAL_ARCHIVE_PATHS = [
 
 const WORKSPACE_POLICY = 'pnpm-workspace.yaml'
 
-const ALIAS_SPECIFIER =
-  /(\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)(['"])@(renderer)?\/([^'"]+)\2/g
-
-// Static, side-effect, lazy and CommonJS loads of a bare specifier.
-const BARE_SPECIFIER =
-  /(\bfrom\s*|^\s*import\s*|(?<![.\w$])import\s*\(\s*|(?<![.\w$])require\s*\(\s*)(['"])([^'"\s./][^'"\s]*)\2/gm
-
-type WorkspaceSourceResolver = ReturnType<typeof createWorkspaceSourceResolver>
-
-// Include package JS too: orca-source exports may target any supported module extension.
-function isRewritableSource(name: string): boolean {
-  return /\.(ts|tsx|mts|cts|js|mjs|cjs)$/.test(name)
-}
-
-function isTestSource(name: string): boolean {
-  return /\.(test|bench|spec)\.(ts|tsx|mts|cts|js|mjs|cjs)$/.test(name)
-}
-
-/** Keep renderer aliases inside the extracted release rather than the working tree. */
-async function rewriteRendererAliases(
-  file: string,
-  source: string,
-  rendererRoot: string
-): Promise<string> {
-  if (!source.includes("'@/") && !source.includes('"@/') && !source.includes('@renderer/')) {
-    return source
-  }
-  const rewritten = source.replace(
-    ALIAS_SPECIFIER,
-    (_match, keyword: string, quote: string, _renderer: string | undefined, target: string) =>
-      `${keyword}${quote}${relativeSpecifier(file, join(rendererRoot, target))}${quote}`
-  )
-  if (rewritten !== source) {
-    await writeFile(file, rewritten)
-  }
-  return rewritten
-}
-
-function relativeSpecifier(file: string, absolute: string): string {
-  const relativePath = relative(dirname(file), absolute).split('\\').join('/')
-  return relativePath.startsWith('.') ? relativePath : `./${relativePath}`
-}
-
-/** Why: the install link and vitest's workspace aliases would otherwise load current packages. */
-async function rewriteWorkspaceImports(
-  root: string,
-  file: string,
-  source: string,
-  resolver: WorkspaceSourceResolver
-): Promise<string> {
-  const rewritten = source.replace(
-    BARE_SPECIFIER,
-    (match, keyword: string, quote: string, specifier: string) => {
-      let target: ReturnType<WorkspaceSourceResolver['resolve']>
-      try {
-        target = resolver.resolve(specifier)
-      } catch (error) {
-        throw new Error(`${relative(root, file)}: ${String(error)}`)
-      }
-      // Native packages can't be built from the release, so they keep the current install.
-      return target
-        ? `${keyword}${quote}${relativeSpecifier(file, join(root, target.file))}${quote}`
-        : match
-    }
-  )
-  if (rewritten !== source) {
-    await writeFile(file, rewritten)
-  }
-  return rewritten
-}
-
-async function prepareExtractedTree(
-  root: string,
-  workspacePaths: string[],
-  packageImports: PackageImports
-): Promise<void> {
-  const resolver = workspacePaths.length > 0 ? createWorkspaceSourceResolver(root) : null
-  const rendererRoot = join(root, 'src', 'renderer', 'src')
-  const walk = async (directory: string): Promise<void> => {
-    for (const entry of await readdir(directory, { withFileTypes: true })) {
-      const full = join(directory, entry.name)
-      if (entry.isDirectory()) {
-        await walk(full)
-        continue
-      }
-      if (!entry.isFile()) {
-        continue
-      }
-      // Why: stale specs must not enter repo-wide tool walks through the cache.
-      if (isTestSource(entry.name)) {
-        await rm(full)
-        continue
-      }
-      if (isRewritableSource(entry.name)) {
-        let source = await rewriteRendererAliases(full, await readFile(full, 'utf8'), rendererRoot)
-        if (resolver) {
-          source = await rewriteWorkspaceImports(root, full, source, resolver)
-        }
-        collectPackageImports(source, packageImports)
-      }
-    }
-  }
-  await walk(join(root, 'src'))
-  // Source packages outside src/ load from here too; native ones keep the current install.
-  for (const path of workspacePaths) {
-    if (path !== WORKSPACE_POLICY && !path.startsWith('src/') && !path.startsWith('native/')) {
-      await walk(join(root, path))
-    }
-  }
-}
-
 function checkoutTarProgram(): string {
   if (process.platform !== 'win32') {
     return 'tar'
@@ -164,7 +53,8 @@ async function runCheckoutProcess(
   repoRoot: string,
   program: string,
   args: string[],
-  deadline: number
+  deadline: number,
+  outputPolicy: { maxOutputBytes?: number; requireCompleteOutput?: boolean } = {}
 ): Promise<string> {
   // Kept lazy so plain Node 24 contention children never load Vite's TS graph.
   const { runProcess } = await import('@orca/process-host')
@@ -173,10 +63,13 @@ async function runCheckoutProcess(
     args,
     cwd: repoRoot,
     timeoutMs: Math.max(1, deadline - Date.now()),
-    maxOutputBytes: CHECKOUT_MAX_OUTPUT_BYTES,
+    maxOutputBytes: outputPolicy.maxOutputBytes ?? CHECKOUT_MAX_OUTPUT_BYTES,
     terminationBarrier: true
   })
   if (result.code === 0 && !result.timedOut) {
+    if (outputPolicy.requireCompleteOutput && result.outputTruncated) {
+      throw new Error(`${program} output truncated`)
+    }
     return result.stdout
   }
   const detail = result.timedOut
@@ -258,20 +151,24 @@ export async function extractReleaseCheckoutTree(
   const workspacePaths = await releaseWorkspaceArchivePaths(repoRoot, commit, deadline)
   const optionalPaths = await listReleasePaths(repoRoot, commit, OPTIONAL_ARCHIVE_PATHS, deadline)
   try {
-    await runCheckoutProcess(
+    const paths = [...ARCHIVE_PATHS, ...optionalPaths, ...workspacePaths]
+    await withReleaseArchivePruning(
       repoRoot,
-      'git',
-      [
-        'archive',
-        '--format=tar',
-        `--output=${archive}`,
-        commit,
-        '--',
-        ...ARCHIVE_PATHS,
-        ...optionalPaths,
-        ...workspacePaths
-      ],
-      deadline
+      commit,
+      paths,
+      (args, maxOutputBytes) =>
+        runCheckoutProcess(repoRoot, 'git', args, deadline, {
+          maxOutputBytes,
+          requireCompleteOutput: true
+        }),
+      (config) =>
+        runCheckoutProcess(
+          repoRoot,
+          'git',
+          [...config, 'archive', '--format=tar', `--output=${archive}`, commit, '--', ...paths],
+          deadline
+        ).then(() => {}),
+      releaseSourcePreparationRoots(workspacePaths)
     )
     await runCheckoutProcess(
       repoRoot,

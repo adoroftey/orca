@@ -7,6 +7,7 @@ const NODE_RUNTIME_INCLUDE = [
   'src/main/linear/linear-issue-detail-deadline.test.ts',
   'tests/e2e/linear-cli-recovery.unit.test.ts',
   'src/main/runtime/structured-agent-cli-writers.test.ts',
+  'src/main/runtime/structured-claude-thinking-display-refusal.test.ts',
   'config/scripts/vitest-sqlite-runtime-boundary.test.ts',
   'config/scripts/cloud-security-history-workflow.test.mjs',
   'config/scripts/skill-recipe-shell.test.mjs',

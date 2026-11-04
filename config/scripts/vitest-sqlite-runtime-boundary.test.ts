@@ -25,3 +25,14 @@ it.each([
 ])('routes the real topology SQLite fixture consumer to Node: %s', (file) => {
   expect(importsSqliteRuntime(file, readFileSync(file, 'utf8'))).toBe(true)
 })
+
+it('routes the real persisted profile helper SQLite import to Node but ignores type-only imports', () => {
+  const file = 'tests/e2e/helpers/persisted-profile-state.unit.test.ts'
+  expect(importsSqliteRuntime(file, readFileSync(file, 'utf8'))).toBe(true)
+  expect(
+    importsSqliteRuntime(
+      file,
+      "import type { ProfileStateDatabase } from '../../../src/main/persistence/profile-state/profile-state-database'"
+    )
+  ).toBe(false)
+})
